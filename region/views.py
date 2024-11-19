@@ -1,41 +1,147 @@
-import json
+import pytz
+from datetime import datetime
+from django.utils.timezone import make_aware
 
-from django.contrib.gis.geos import Point, MultiPolygon, GEOSGeometry, Polygon
-from django.shortcuts import HttpResponse
+from rest_framework.decorators import action, authentication_classes
+from rest_framework import status
+from rest_framework.viewsets import ViewSet
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
-from region.constants import SRID
-from region.models import Location
+from authorization.authentication import ExpiringTokenAuthentication
 
-# Create your views here.
-def index(request):
-    # point = Point(2.719964, 10.047446, srid=SRID)
-    # point.transform(SRID)
-    # print(Location.objects.all()[1])
-    # area:MultiPolygon = Location.objects.all()[1].geojson_area
-    # print(area.contains(point))
-    # area_contains = Location.objects.filter(geojson_area__contains=point)
-    # if area_contains.exists():
-    #     return HttpResponse("contain")
-    with open('cmr.geojson', encoding='utf-8') as f:
-        geojson_data = json.load(f)
+from constants.config import DATETIME_FORMAT
+from region.serializers.output_serializer import RegionSerializer
 
-    point = Point(2.719964, 10.047446, srid=SRID)
+from utils.logger import logger
+from utils.pagination import PaginationHandlerMixin, BasicPagination
 
-    for feature in geojson_data['features']:
-        geometry = feature['geometry']
+from region.models import Region
+from record.models import Record
+
+@authentication_classes([ExpiringTokenAuthentication])
+class RegionViewSet(ViewSet, PaginationHandlerMixin):
+    pagination_class = BasicPagination
+    serializer_class = RegionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk:str):
+        try:
+            return Region.objects.get(pk=pk)
+        except Region.DoesNotExist:
+            data = {
+                "status": False,
+                "message": "This region does not exist"
+            }
+            logger.warning("This region does not exist")
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
         
-        # Convert the geometry to a MultiPolygon if it’s not already
-        if geometry['type'] == 'MultiPolygon':
-            multipolygon = GEOSGeometry(json.dumps(geometry))
-        elif geometry['type'] == 'Polygon':
-            multipolygon = MultiPolygon(Polygon(*geometry['coordinates']))
-        else:
-            pass  # Skip if not a Polygon or MultiPolygon
-        print(multipolygon.srid)
-        # Check if the point is inside the MultiPolygon
-        if multipolygon.contains(point):
-            # Optional: print feature properties or perform any specific actions
-            print(feature['properties'])
-            return HttpResponse("The point is inside this geometry!") # Stop if you only need the first matching geometry
-        else:
-            return HttpResponse("The point is not inside any geometry.")
+    def list(self, request):
+        datas = []
+        regions = Region.objects.all()
+        for region in regions:
+            records = Record.objects.only('form').filter(form__region=region)
+            datas.append({
+                "id": region.id,
+                "name": region.name,
+                "records": len(records)
+            })
+            
+        serializer = self.serializer_class(datas, many=True)
+        logger.warning("Basic regions stats loaded")
+        return Response({
+            "status": True,
+            "message": "Basic regions stats loaded",
+            "detail": serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    def retrieve(self, request, pk=None):
+        region = self.get_object(pk=pk)
+        if type(region) is Response : return region
+
+    
+@authentication_classes([ExpiringTokenAuthentication])
+class RegionFilterSet(ViewSet, PaginationHandlerMixin):
+    pagination_class = BasicPagination
+    serializer_class = RegionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk:str):
+        try:
+            return Region.objects.get(pk=pk)
+        except Region.DoesNotExist:
+            data = {
+                "status": False,
+                "message": "This region does not exist"
+            }
+            logger.warning("This region does not exist")
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+    def list(self, request):
+        action = request.GET.get("action", None)
+        collector = request.GET.get("collector", None)
+        enterprise = request.GET.get("enterprise", None)
+        min_date = request.GET.get("min_date", None)
+        max_date = request.GET.get("max_date", None)
+
+        if action is None and collector is None and enterprise is None and min_date is None and max_date is None:
+            logger.error("Provide at least one filter params (params, collector, enterprise, start_date, end_date)")
+            return Response({
+                "status": False,
+                "message": "Provide at least one filter params (params, collector, enterprise, start_date, end_date)",
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        datas = []
+        regions = Region.objects.all()
+
+        for region in regions:
+            records = Record.objects.all()
+            
+            if action is not None:
+                records = records.only("action").filter(action=action)
+            if collector is not None:
+                records = records.only("collector").filter(collector=collector)
+            if enterprise is not None:
+                records = records.only("enterprise").filter(enterprise=enterprise)
+            if min_date is not None:
+                date = datetime.strptime(min_date, DATETIME_FORMAT)
+                records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC))
+            if max_date is not None:
+                date = datetime.strptime(max_date, DATETIME_FORMAT)
+                records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
+
+            datas.append({
+                "id": region.id,
+                "name": region.name,
+                "records": len(records)
+            })
+            
+        serializer = self.serializer_class(datas, many=True)
+        logger.warning("Basic regions stats loaded")
+        return Response({
+            "status": True,
+            "message": "Basic regions stats loaded",
+            "detail": serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    # @action(detail=False, methods=['post'], name='action', url_name='action')
+    # def action(self, request):
+    #     print(request.headers.get("action"))
+    #     print(request.headers.get("start_date"))
+    #     datas = []
+    #     regions = Region.objects.all()
+    #     for region in regions:
+    #         records = Record.objects.only('action').filter(action=region)
+    #         datas.append({
+    #             "id": region.id,
+    #             "name": region.name,
+    #             "records": len(records)
+    #         })
+            
+    #     serializer = self.serializer_class(datas, many=True)
+    #     logger.warning("Basic regions stats loaded")
+    #     return Response({
+    #         "status": True,
+    #         "message": "Basic regions stats loaded",
+    #         "detail": serializer.data
+    #     }, status=status.HTTP_200_OK)

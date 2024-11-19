@@ -17,7 +17,20 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from user.views import AuthViewSet
+from region.views import RegionViewSet, RegionFilterSet
+from record.views import RecordViewSet
+
+from rest_framework import routers
+
+routers = routers.DefaultRouter()
+
+routers.register('auth', AuthViewSet, basename='auth')
+routers.register('region', RegionViewSet, basename='region')
+routers.register('region-filter', RegionFilterSet, basename='region-filter')
+routers.register('record', RecordViewSet, basename='record')
+
 urlpatterns = [
-    path("", include("region.urls")),
     path('admin/', admin.site.urls),
+    path('', include(routers.urls)),
 ]

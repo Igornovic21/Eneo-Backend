@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 import os
+import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -31,6 +32,8 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get("DATA_UPLOAD_MAX_MEMORY_SIZE"))
+DATA_UPLOAD_MAX_NUMBER_FIELDS = int(os.environ.get("DATA_UPLOAD_MAX_NUMBER_FIELDS"))
 
 
 # Quick-start development settings - unsuitable for production
@@ -56,7 +59,15 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.gis',
 
-    'region'
+    'corsheaders',
+    'rest_framework',
+    "django_apscheduler",
+    'rest_framework.authtoken',
+
+    'user',
+    'region',
+    'config',
+    'record',
 ]
 
 MIDDLEWARE = [
@@ -135,14 +146,64 @@ USE_I18N = True
 
 USE_TZ = True
 
+AUTH_USER_MODEL = 'user.User'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
-DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get("DATA_UPLOAD_MAX_MEMORY_SIZE"))
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 MEDIA_URL = 'media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Rest framework configuration
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework.authentication.TokenAuthentication'],
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100,
+}
+
+# logs configuration
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    "handlers": {
+        "file": {
+            'level': 'DEBUG',
+            "class": "logging.FileHandler",
+            'filename': os.path.join(BASE_DIR, 'logs/debug.log'),
+            'formatter': 'verbose',
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["file"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "DEBUG"),
+            "propagate": True,
+        },
+    },
+}
+
+# Token expired date
+TOKEN_EXPIRED_AFTER_SECONDS = 86400
+TOKEN_EXPIRE_TIME = datetime.timedelta(seconds=TOKEN_EXPIRED_AFTER_SECONDS)
+
+# Apscheduler configurations
+APSCHEDULER_DATETIME_FORMAT = os.environ.get("APSCHEDULER_DATETIME_FORMAT")
+APSCHEDULER_RUN_NOW_TIMEOUT = int(os.environ.get("APSCHEDULER_RUN_NOW_TIMEOUT"))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

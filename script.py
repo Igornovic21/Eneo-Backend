@@ -1,53 +1,54 @@
 import requests, json
 
-from django.contrib.gis.geos import Point, MultiPolygon, GEOSGeometry, Polygon
+from constants.config import ONA_PROJECT
+from record.models import Record
+from config.models import FormData
 
-from region.constants import SRID
-
-headers = {
+FIELDS:str = "id/pl/date/action/nbr_pl/contrat/montant/Collecteur/_geolocation/_attachements/accesibilite/code_anomaly/matricule_co/numero_scelle/action_coupure/entreprise_collecteur"
+HEADERS = {
     "Authorization": "Token a8996c762270c9104b53f42d50061028c22d4896"
 }
 
 def get_project() -> list[dict]:
-    response = requests.get("https://api.ona.io/api/v1/projects", headers=headers)
+    response = requests.get("https://api.ona.io/api/v1/projects", headers=HEADERS)
     if response.status_code != 200:
         print("error when getting projects")
     
     for project in response.json():
-        if project["name"] == "COLLECTE DES PL (AV)":
+        if project["name"] == ONA_PROJECT:
             return project["forms"]
 
 def get_form_data(forms: list[dict]):
     for form in forms:
-        print(form["formid"])
-
-def check_point():
-    with open('path/to/your/geojson_file.geojson') as f:
-        geojson_data = json.load(f)
-
-    point = Point(2.719964, 10.047446, srid=SRID)
-
-    for feature in geojson_data['features']:
-        geometry = feature['geometry']
-        
-        # Convert the geometry to a MultiPolygon if it’s not already
-        if geometry['type'] == 'MultiPolygon':
-            multipolygon = GEOSGeometry(json.dumps(geometry))
-        elif geometry['type'] == 'Polygon':
-            multipolygon = MultiPolygon(Polygon(*geometry['coordinates']))
-        else:
-            pass  # Skip if not a Polygon or MultiPolygon
-
-        # Check if the point is inside the MultiPolygon
-        if multipolygon.contains(point):
-            print("The point is inside this geometry!")
-            # Optional: print feature properties or perform any specific actions
-            print(feature['properties'])
-            return # Stop if you only need the first matching geometry
-        else:
-            print("The point is not inside any geometry.")
+        print(form["title"])
+        forms_obj = FormData.objects.filter(region__name=form["title"])
+        if forms_obj.exists():
+            print(forms_obj[0].region.name)
+            response = requests.get("https://api.ona.io/api/v1/data/{}".format(form["formid"]), headers=HEADERS)
+            fields = FIELDS.split("/")
+            
+            if response.status_code == 200:
+                data:dict = response.json()[0]
+                result = {}
+                ona_id = data["ona_id"]
+                action = data["action"]
+                collector = data["Collecteur"]
+                enterprise = data["entreprise_collecteur"]
+                for field in fields:
+                    if field in data.keys():
+                        result[field] = data[field]
+                    else:
+                        result[field] = ""
+                Record.objects.create(
+                    form=forms_obj[0],
+                    ona_id=ona_id,
+                    data=json.dumps(result),
+                    full_data=json.dumps(response.json()),
+                    action=action,
+                    collector=collector,
+                    enterprise=enterprise
+                )
 
 if __name__ == "__main__":
-    # forms = get_project()
-    # get_form_data(forms)
-    check_point()
+    forms = get_project()
+    get_form_data(forms)

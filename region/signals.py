@@ -5,9 +5,9 @@ from django.db import models
 from django.dispatch import receiver
 
 from region.constants import SRID
-from region.models import Location
+from region.models import Region
 
-@receiver(models.signals.post_save, sender=Location)
+@receiver(models.signals.post_save, sender=Region)
 def get_geo_content(sender, instance, **kwargs):
     if instance.geojson_file:
         print("============= open geojson file ===============")
@@ -34,7 +34,7 @@ def get_geo_content(sender, instance, **kwargs):
             if polygons:
                 multi_polygon = MultiPolygon(polygons)
                 # instance.geojson_area = multi_polygon
-                Location.objects.filter(id=instance.id).update(geojson_area=multi_polygon, geojson_content=geojson_data)
+                Region.objects.filter(id=instance.id).update(geojson_area=multi_polygon, geojson_content=geojson_data)
                 # instance.save()
                 return
 
@@ -42,6 +42,6 @@ def get_geo_content(sender, instance, **kwargs):
             geometry = GEOSGeometry(geojson_data, srid=SRID)
             if geometry.geom_type in ['Polygon', 'MultiPolygon']:
                 # instance.geojson_area = geometry
-                Location.objects.filter(id=instance.id).update(geojson_area=geometry, geojson_content=geojson_data)
+                Region.objects.filter(id=instance.id).update(geojson_area=geometry, geojson_content=geojson_data)
             # instance.geojson_content = geojson_data
             # instance.save()

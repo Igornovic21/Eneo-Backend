@@ -1,6 +1,5 @@
 from django.contrib import admin
-
-from region.models import Region
+from user.models import User
 
 # Register your models here.
-admin.site.register(Region)
+admin.site.register(User)
