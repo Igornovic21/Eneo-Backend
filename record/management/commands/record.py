@@ -1,27 +1,31 @@
 import requests, json
+
 from datetime import datetime
+from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
 
 from constants.config import ONA_PROJECT
 from constants.ona_api import ONA_DATA_URL, ONA_PROJECT_URL
 from utils.logger import logger
 
+from config.models import Credential
+from region.models import Region
 from record.models import Record
-from config.models import FormData
-
-HEADERS = {
-    "Authorization": "Token a8996c762270c9104b53f42d50061028c22d4896"
-}
+from itinary.models import Itinary
 
 class Command(BaseCommand):
     help = 'Get list of data for any FormConfig Save in th App'
 
     def add_arguments(self, parser):
-        parser.add_argument('--form', type=str, help='A specific ONA Form name')
+        parser.add_argument('--verbose', action='store_true', help='Enable verbose mode')
 
     def handle(self, *args, **kwargs):
-        form_arg = kwargs['form']
+        credential = Credential.objects.first()
+        fields = credential.fields.split("/")
         ona_forms = []
+        HEADERS = {
+            "Authorization": "Token {}".format(credential.ona_token)
+        }
         
         response = requests.get(ONA_PROJECT_URL, headers=HEADERS)
         if response.status_code != 200:
@@ -31,93 +35,44 @@ class Command(BaseCommand):
             if project["name"] == ONA_PROJECT:
                 ona_forms = project["forms"]
                     
-        if form_arg is None:
-            for form in ona_forms:
-                forms_obj = FormData.objects.filter(region__name=form["name"])
+        for form in ona_forms:
+            response = requests.get(ONA_DATA_URL.format(form["formid"]), headers=HEADERS)
+            
+            if response.status_code != 200:
+                self.stdout.write(self.style.ERROR("Error when getting {} form datas").format(form["title"]))
+            
+            for data in response.json():
+                ona_id = data["id"]
 
-                if forms_obj.exists():
-                    response = requests.get(ONA_DATA_URL.format(form["formid"]), headers=HEADERS)
-                    fields = forms_obj[0].fields.split("/")
-                    
-                    if response.status_code != 200:
-                        self.stdout.write(self.style.ERROR("Error when getting {} form datas").format(form["title"]))
-                    
-                    for data in response.json():
-                        ona_id = data["id"]
+                if Record.objects.only("ona_id").filter(ona_id=ona_id).exists():
+                    self.stdout.write(self.style.WARNING("Record {} already saved".format(ona_id)))
+                
+                result = {}
+                action = data["action"]
+                collector = data["Collecteur"]
+                enterprise = data["entreprise_collecteur"]
+                date = datetime.fromisoformat(data["date"])
+                latitude = data["_geolocation"][0]
+                longitude = data["_geolocation"][1]
 
-                        if Record.objects.filter(ona_id=ona_id).exists():
-                            self.stdout.write(self.style.WARNING("Record {} already saved").format(ona_id))
-                        
-                        result = {}
-                        action = data["action"]
-                        collector = data["Collecteur"]
-                        enterprise = data["entreprise_collecteur"]
-                        date = datetime.fromisoformat(data["date"])
-
-                        for field in fields:
-                            if field in data.keys():
-                                result[field] = data[field]
-                            else:
-                                result[field] = ""
-                        records = Record.objects.only("ona_id").filter(ona_id=ona_id)
-                        if records.exists():
-                            records[0].data = json.dumps(result)
-                            records[0].full_data = json.dumps(data)
-                            records[0].action = action
-                            records[0].collector = collector
-                            records[0].enterprise = enterprise
-                            records[0].date = date
-                            records[0].save()
-                        else:
-                            Record.objects.create(
-                                form=forms_obj[0],
-                                ona_id=ona_id,
-                                data=json.dumps(result),
-                                full_data=json.dumps(data),
-                                action=action,
-                                collector=collector,
-                                enterprise=enterprise,
-                                date=date
-                            )
-                    self.stdout.write("All data loaded for configured forms")
-        else:
-            for form in ona_forms:
-                if form["name"] == form_arg:
-                    forms_obj = FormData.objects.filter(region__name=form["name"])
-
-                    if forms_obj.exists():
-                        response = requests.get(ONA_DATA_URL.format(form["formid"]), headers=HEADERS)
-                        fields = forms_obj[0].fields.split("/")
-                        
-                        if response.status_code != 200:
-                            self.stdout.write(self.style.ERROR("Error when getting {} form datas").format(form["title"]))
-                        
-                        for data in response.json():
-                            ona_id = data["id"]
-
-                            if Record.objects.filter(ona_id=ona_id).exists():
-                                self.stdout.write(self.style.WARNING("Record {} already saved").format(ona_id))
-                            
-                            result = {}
-                            action = data["action"]
-                            collector = data["Collecteur"]
-                            enterprise = data["entreprise_collecteur"]
-                            date = datetime.fromisoformat(date["date"])
-
-                            for field in fields:
-                                if field in data.keys():
-                                    result[field] = data[field]
-                                else:
-                                    result[field] = ""
-
-                            Record.objects.create(
-                                form=forms_obj[0],
-                                ona_id=ona_id,
-                                data=json.dumps(result),
-                                full_data=json.dumps(response.json()),
-                                action=action,
-                                collector=collector,
-                                enterprise=enterprise,
-                                date=date
-                            )
-                        self.stdout.write("All data loaded for {} forms".format(form_arg))
+                for field in fields:
+                    if field in data.keys():
+                        result[field] = data[field]
+                    else:
+                        result[field] = ""
+                
+                record, _ = Record.objects.get_or_create(ona_id=ona_id)
+                record.data = json.dumps(result)
+                record.full_data = json.dumps(data)
+                record.action = action
+                record.collector = collector
+                record.enterprise = enterprise
+                record.date = date
+                point = Point(longitude, latitude)
+                results = Itinary.objects.only("boundary").filter(boundary__contains=point)
+                if results.exists():
+                    record.itinary = results[0]
+                    record.save()
+                else:
+                    self.stdout.write("No itinary found for this submission {}".format(ona_id))
+            return self.stdout.write(self.style.SUCCESS("All data loaded for configured forms"))

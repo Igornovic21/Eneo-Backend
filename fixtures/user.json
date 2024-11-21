@@ -1,0 +1,21 @@
+[
+  {
+    "model": "user.user",
+    "pk": "8ab59f47-301d-4405-8c70-82b9c76434a1",
+    "fields": {
+      "password": "pbkdf2_sha256$870000$bXojzH4npGFwBFNmPPOz4j$kstf70wKSHuPvST5dXCmVPiIDa1P5RaGRSdXdL3Qako=",
+      "last_login": "2024-11-14T10:06:30.750Z",
+      "is_superuser": true,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2024-11-14T10:06:05.017Z",
+      "email": "superuser@gmail.com",
+      "username": "superuser",
+      "profile_picture": "",
+      "groups": [],
+      "user_permissions": []
+    }
+  }
+]

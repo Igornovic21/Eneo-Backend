@@ -40,10 +40,11 @@ class RegionViewSet(ViewSet, PaginationHandlerMixin):
         datas = []
         regions = Region.objects.all()
         for region in regions:
-            records = Record.objects.only('form').filter(form__region=region)
+            records = Record.objects.only('itinary').filter(itinary__region=region)
             datas.append({
                 "id": region.id,
                 "name": region.name,
+                "ona_name": region.ona_name,
                 "records": len(records)
             })
             

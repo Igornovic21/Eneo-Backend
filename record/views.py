@@ -63,7 +63,7 @@ class RecordViewSet(ViewSet, PaginationHandlerMixin):
         region = self.get_region_object(pk=pk)
         if type(region) is Response : return region
 
-        records = Record.objects.only('form').filter(form__region=region)
+        records = Record.objects.only('itinary').filter(itinary__region=region)
         page = self.paginate_queryset(records)
         if page is not None:
             serializer = self.get_paginated_response(self.serializer_class(page, many=True).data)

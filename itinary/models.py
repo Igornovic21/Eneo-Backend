@@ -2,11 +2,14 @@ import uuid
 
 from django.contrib.gis.db import models
 
-class Region(models.Model):
+from region.models import Region
+
+class Itinary(models.Model):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
 
     name = models.CharField(max_length=100, unique=True)
-    ona_name = models.CharField(max_length=100, blank=True,null=True)
+    boundary = models.MultiPolygonField(blank=True, null=True)
+    region = models.ForeignKey(Region, on_delete=models.DO_NOTHING, null=True, blank=True)
 
     def __str__(self) -> str:
         return self.name
@@ -14,5 +17,6 @@ class Region(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=['name']),
-            models.Index(fields=['ona_name']),
+            models.Index(fields=['region']),
+            models.Index(fields=['boundary']),
         ]

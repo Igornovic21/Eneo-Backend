@@ -1,0 +1,10 @@
+[
+  {
+    "model": "config.credential",
+    "pk": "64beb15a-b7d2-420d-8cb7-167596bef621",
+    "fields": {
+      "ona_token": "a8996c762270c9104b53f42d50061028c22d4896",
+      "fields": "id/pl/date/action/nbr_pl/contrat/montant/Collecteur/_geolocation/_attachments/accesibilite/code_anomaly/matricule_co/numero_scelle/action_coupure/entreprise_collecteur"
+    }
+  }
+]

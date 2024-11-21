@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-import os
-import datetime
+import os, datetime
+
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -61,16 +61,19 @@ INSTALLED_APPS = [
 
     'corsheaders',
     'rest_framework',
-    "django_apscheduler",
+    'django_apscheduler',
     'rest_framework.authtoken',
 
     'user',
     'region',
+    'itinary',
     'config',
     'record',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -107,11 +110,11 @@ WSGI_APPLICATION = 'ona.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': os.environ.get('DB_NAME'),
-        'PORT': os.environ.get('DB_PORT'),
-        'HOST': os.environ.get('DB_HOST'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD')
+        'NAME': os.environ.get('POSTGRES_DB', 'ona-db'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'root'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
+        'PORT': None,
     }
 }
 

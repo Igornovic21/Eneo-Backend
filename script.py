@@ -1,54 +1,39 @@
-import requests, json
+import os, json
 
-from constants.config import ONA_PROJECT
-from record.models import Record
-from config.models import FormData
+from shapely.geometry import shape, Point
 
-FIELDS:str = "id/pl/date/action/nbr_pl/contrat/montant/Collecteur/_geolocation/_attachements/accesibilite/code_anomaly/matricule_co/numero_scelle/action_coupure/entreprise_collecteur"
-HEADERS = {
-    "Authorization": "Token a8996c762270c9104b53f42d50061028c22d4896"
-}
+# 4.5754986, 13.7016681 Inside
+# 6.179836, 39.283501 Not Inside
 
-def get_project() -> list[dict]:
-    response = requests.get("https://api.ona.io/api/v1/projects", headers=HEADERS)
-    if response.status_code != 200:
-        print("error when getting projects")
-    
-    for project in response.json():
-        if project["name"] == ONA_PROJECT:
-            return project["forms"]
+itinary_file = 'itineraire.geojson'
+geojson_file = 'DRSOM.geojson'
+latitude = 4.1536513
+longitude = 9.2855841
 
-def get_form_data(forms: list[dict]):
-    for form in forms:
-        print(form["title"])
-        forms_obj = FormData.objects.filter(region__name=form["title"])
-        if forms_obj.exists():
-            print(forms_obj[0].region.name)
-            response = requests.get("https://api.ona.io/api/v1/data/{}".format(form["formid"]), headers=HEADERS)
-            fields = FIELDS.split("/")
-            
-            if response.status_code == 200:
-                data:dict = response.json()[0]
-                result = {}
-                ona_id = data["ona_id"]
-                action = data["action"]
-                collector = data["Collecteur"]
-                enterprise = data["entreprise_collecteur"]
-                for field in fields:
-                    if field in data.keys():
-                        result[field] = data[field]
-                    else:
-                        result[field] = ""
-                Record.objects.create(
-                    form=forms_obj[0],
-                    ona_id=ona_id,
-                    data=json.dumps(result),
-                    full_data=json.dumps(response.json()),
-                    action=action,
-                    collector=collector,
-                    enterprise=enterprise
-                )
+# 4.1536513
+# 9.2855841
+
+def load_geojson(file_path):
+    with open(file_path, 'r') as f:
+        geojson_data = json.load(f)
+    return geojson_data
+
+def is_point_inside_geojson(geojson_file, lat, lon):
+    geojson_data = load_geojson(geojson_file)
+
+    # Create a point from the provided coordinates
+    point = Point(lon, lat)  # Note: GeoJSON uses [longitude, latitude]
+
+    # Iterate through each feature in the GeoJSON
+    for feature in geojson_data['features']:
+        polygon = shape(feature['geometry'])
+        if polygon.contains(point):
+            return True
+    return False
+
 
 if __name__ == "__main__":
-    forms = get_project()
-    get_form_data(forms)
+    if is_point_inside_geojson(geojson_file, latitude, longitude):
+        print("The point is inside the GeoJSON area.")
+    else:
+        print("The point is outside the GeoJSON area.")
