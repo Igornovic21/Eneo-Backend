@@ -1,16 +1,16 @@
 version: '3.9'
 
 services:
-  db:
+  eneo-db:
     image: postgis/postgis:16-3.5-alpine
-    container_name: db
+    container_name: eneo-db
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
       - ./.docker/.env.db
     healthcheck:
-      test: ["CMD", "pg_isready", "-d", "ona-db", "-U", "postgres"]
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -18,18 +18,18 @@ services:
     ports:
       - "5000:5432"
 
-  adminer:
+  eneo-adminer:
     image: adminer
-    container_name: admin-db
+    container_name: eneo-admin-db
     restart: always
     ports:
       - 8080:8080
     depends_on:
       - db
   
-  backend:
+  eneo-backend:
     build: .
-    container_name: backend
+    container_name: eneo-backend
     # command: ["./.docker/wait-for-it.sh", "db:5000", "--", "python", "manage.py", "runserver", "0.0.0.0:8000"]
     # command: ["./.docker/wait-for-it.sh db:${POSTGRES_PORT} -- python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
     # command: python manage.py runserver 0.0.0.0:8000
