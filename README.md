@@ -26,7 +26,7 @@ Add `.env` file at the root of the folder
 Add `.env.db` file inside the `.docker` folder
 
 ```bash
-  cp .docker/.env.example.db .docker./env.db
+  cp .docker/.env.example.db .docker./.env.db
 ```
 
 Place the itinary.geojson file inside the fixtures folder
@@ -44,8 +44,6 @@ To run this project, you will need to add the following environment variables to
 `POSTGRES_USER`
 
 `POSTGRES_PASSWORD`
-
-`POSTGRES_HOST`
 
 `POSTGRES_PORT` (recommended value in paranthesis)
 
