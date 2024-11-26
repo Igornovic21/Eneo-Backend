@@ -1,7 +1,10 @@
 from rest_framework import serializers
 
-class RegionSerializer(serializers.Serializer):
-    id = serializers.CharField()
-    name = serializers.CharField()
-    ona_name = serializers.CharField()
+from region.models import Region
+
+class RegionSerializer(serializers.ModelSerializer):
     records = serializers.IntegerField()
+
+    class Meta:
+        model = Region
+        fields = ["id", "name", "ona_name", "records"]

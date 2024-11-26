@@ -11,10 +11,14 @@ class Itinary(models.Model):
     boundary = models.MultiPolygonField(blank=True, null=True)
     region = models.ForeignKey(Region, on_delete=models.DO_NOTHING, null=True, blank=True)
 
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
     def __str__(self) -> str:
         return self.name
 
     class Meta:
+        ordering = ['-date_created']
         indexes = [
             models.Index(fields=['name']),
             models.Index(fields=['region']),

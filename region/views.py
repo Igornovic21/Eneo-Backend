@@ -2,7 +2,7 @@ import pytz
 from datetime import datetime
 from django.utils.timezone import make_aware
 
-from rest_framework.decorators import action, authentication_classes
+from rest_framework.decorators import authentication_classes
 from rest_framework import status
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
@@ -49,16 +49,12 @@ class RegionViewSet(ViewSet, PaginationHandlerMixin):
             })
             
         serializer = self.serializer_class(datas, many=True)
-        logger.warning("Basic regions stats loaded")
+        logger.warning("Regions stats loaded")
         return Response({
             "status": True,
-            "message": "Basic regions stats loaded",
+            "message": "Regions stats loaded",
             "detail": serializer.data
         }, status=status.HTTP_200_OK)
-    
-    def retrieve(self, request, pk=None):
-        region = self.get_object(pk=pk)
-        if type(region) is Response : return region
 
     
 @authentication_classes([ExpiringTokenAuthentication])
@@ -118,31 +114,9 @@ class RegionFilterSet(ViewSet, PaginationHandlerMixin):
             })
             
         serializer = self.serializer_class(datas, many=True)
-        logger.warning("Basic regions stats loaded")
+        logger.warning("Filtered regions stats loaded")
         return Response({
             "status": True,
-            "message": "Basic regions stats loaded",
+            "message": "Filtered regions stats loaded",
             "detail": serializer.data
         }, status=status.HTTP_200_OK)
-    
-    # @action(detail=False, methods=['post'], name='action', url_name='action')
-    # def action(self, request):
-    #     print(request.headers.get("action"))
-    #     print(request.headers.get("start_date"))
-    #     datas = []
-    #     regions = Region.objects.all()
-    #     for region in regions:
-    #         records = Record.objects.only('action').filter(action=region)
-    #         datas.append({
-    #             "id": region.id,
-    #             "name": region.name,
-    #             "records": len(records)
-    #         })
-            
-    #     serializer = self.serializer_class(datas, many=True)
-    #     logger.warning("Basic regions stats loaded")
-    #     return Response({
-    #         "status": True,
-    #         "message": "Basic regions stats loaded",
-    #         "detail": serializer.data
-    #     }, status=status.HTTP_200_OK)

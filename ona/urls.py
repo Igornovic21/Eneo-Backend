@@ -19,7 +19,8 @@ from django.urls import path, include
 
 from user.views import AuthViewSet
 from region.views import RegionViewSet, RegionFilterSet
-from record.views import RecordViewSet
+from record.views import RecordViewSet, RecordFilterSet
+from itinary.views import ItinaryViewSet, ItinaryFilterSet
 
 from rest_framework import routers
 
@@ -27,8 +28,11 @@ routers = routers.DefaultRouter()
 
 routers.register('auth', AuthViewSet, basename='auth')
 routers.register('region', RegionViewSet, basename='region')
-routers.register('region-filter', RegionFilterSet, basename='region-filter')
 routers.register('record', RecordViewSet, basename='record')
+routers.register('itinary', ItinaryViewSet, basename='itinary')
+routers.register('region-filter', RegionFilterSet, basename='region-filter')
+routers.register('record-filter', RecordFilterSet, basename='record-filter')
+routers.register('itinary-filter', ItinaryFilterSet, basename='itinary-filter')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
