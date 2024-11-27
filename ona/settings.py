@@ -114,8 +114,8 @@ DATABASES = {
         'USER': os.environ.get('POSTGRES_USER', 'postgres'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'root'),
         'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
-        # 'PORT': os.environ.get('POSTGRES_PORT'),
-        'PORT': None,
+        'PORT': os.environ.get('POSTGRES_PORT'),
+        # 'PORT': None,
     }
 }
 
@@ -161,6 +161,9 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# allow cors origin
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Rest framework configuration
 REST_FRAMEWORK = {
