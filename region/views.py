@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from authorization.authentication import ExpiringTokenAuthentication
 
 from constants.config import DATETIME_FORMAT
-from region.serializers.output_serializer import RegionSerializer
+from region.serializers.output_serializer import RegionStatSerializer
 
 from utils.logger import logger
 from utils.pagination import PaginationHandlerMixin, BasicPagination
@@ -22,7 +22,7 @@ from record.models import Record
 @authentication_classes([ExpiringTokenAuthentication])
 class RegionViewSet(ViewSet, PaginationHandlerMixin):
     pagination_class = BasicPagination
-    serializer_class = RegionSerializer
+    serializer_class = RegionStatSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk:str):
@@ -60,7 +60,7 @@ class RegionViewSet(ViewSet, PaginationHandlerMixin):
 @authentication_classes([ExpiringTokenAuthentication])
 class RegionFilterSet(ViewSet, PaginationHandlerMixin):
     pagination_class = BasicPagination
-    serializer_class = RegionSerializer
+    serializer_class = RegionStatSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk:str):
@@ -95,17 +95,17 @@ class RegionFilterSet(ViewSet, PaginationHandlerMixin):
             records = Record.objects.all()
             
             if action is not None:
-                records = records.only("action").filter(action=action)
+                records = records.only("action").filter(action__name=action).only("itinary").filter(itinary__region=region)
             if collector is not None:
-                records = records.only("collector").filter(collector=collector)
+                records = records.only("collector").filter(collector__name=collector).only("itinary").filter(itinary__region=region)
             if enterprise is not None:
-                records = records.only("enterprise").filter(enterprise=enterprise)
+                records = records.only("enterprise").filter(enterprise__name=enterprise).only("itinary").filter(itinary__region=region)
             if min_date is not None:
                 date = datetime.strptime(min_date, DATETIME_FORMAT)
-                records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC))
+                records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC)).only("itinary").filter(itinary__region=region)
             if max_date is not None:
                 date = datetime.strptime(max_date, DATETIME_FORMAT)
-                records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
+                records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC)).only("itinary").filter(itinary__region=region)
 
             datas.append({
                 "id": region.id,

@@ -6,6 +6,60 @@ from django.db import models
 from itinary.models import Itinary
 
 # Create your models here.
+class Action(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
+
+    name = models.CharField(max_length=100)
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.name
+    
+    class Meta:
+        ordering = ['date_created']
+        indexes = [
+            models.Index(fields=['name']),
+        ]
+
+
+class Collector(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
+
+    name = models.CharField(max_length=100)
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.name
+    
+    class Meta:
+        ordering = ['date_created']
+        indexes = [
+            models.Index(fields=['name']),
+        ]
+
+
+class Enterprise(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
+    
+    name = models.CharField(max_length=100)
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.name
+    
+    class Meta:
+        ordering = ['date_created']
+        indexes = [
+            models.Index(fields=['name']),
+        ]
+
+
 class Record(models.Model):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
 
@@ -13,9 +67,9 @@ class Record(models.Model):
     ona_id = models.CharField(max_length=100, editable=False, unique=True)
     data = models.TextField()
     full_data = models.TextField()
-    action = models.CharField(max_length=100)
-    collector = models.CharField(max_length=100)
-    enterprise = models.CharField(max_length=100)
+    action = models.ForeignKey(Action, on_delete=models.DO_NOTHING, null=True, blank=True)
+    collector = models.ForeignKey(Collector, on_delete=models.DO_NOTHING, null=True, blank=True)
+    enterprise = models.ForeignKey(Enterprise, on_delete=models.DO_NOTHING, null=True, blank=True)
     date = models.DateTimeField(default=timezone.now)
 
     date_created = models.DateTimeField(auto_now_add=True)

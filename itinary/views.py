@@ -136,11 +136,11 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
         records = Record.objects.only("itinary").filter(itinary=itinary)
         
         if action is not None:
-            records = records.only("action").filter(action=action)
+            records = records.only("action").filter(action__name=action)
         if collector is not None:
-            records = records.only("collector").filter(collector=collector)
+            records = records.only("collector").filter(collector__name=collector)
         if enterprise is not None:
-            records = records.only("enterprise").filter(enterprise=enterprise)
+            records = records.only("enterprise").filter(enterprise__name=enterprise)
         if min_date is not None:
             date = datetime.strptime(min_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC))
