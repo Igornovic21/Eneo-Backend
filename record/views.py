@@ -15,6 +15,7 @@ from constants.config import DATETIME_FORMAT
 from record.serializers.output_serializer import RecordSerializer
 
 from utils.logger import logger
+from utils.statistics import build_statistics
 from utils.pagination import PaginationHandlerMixin, BasicPagination
 
 from region.models import Region
@@ -114,18 +115,20 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
         records = Record.objects.only("itinary").filter(itinary__region=region)
         
         if action is not None:
-            records = records.only("action").filter(action__name=action)
+            records = records.only("action").filter(action__in=action.split(";"))
         if collector is not None:
-            records = records.only("collector").filter(collector__name=collector)
+            records = records.only("collector").filter(collector__in=collector.split(";"))
         if enterprise is not None:
-            records = records.only("enterprise").filter(enterprise__name=enterprise)
+            records = records.only("enterprise").filter(enterprise__in=enterprise.split(";"))
         if min_date is not None:
             date = datetime.strptime(min_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC))
         if max_date is not None:
             date = datetime.strptime(max_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
-            
+
+        # statictics = build_statistics(records)
+
         page = self.paginate_queryset(records)
         if page is not None:
             serializer = self.get_paginated_response(self.serializer_class(page, many=True).data)
@@ -135,5 +138,6 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
         return Response({
             "status": True,
             "message": "Filtered records stats loaded",
+            # "statictics": statictics,
             "detail": serializer.data
         }, status=status.HTTP_200_OK)

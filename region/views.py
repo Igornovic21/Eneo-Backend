@@ -93,13 +93,13 @@ class RegionFilterSet(ViewSet, PaginationHandlerMixin):
 
         for region in regions:
             records = Record.objects.all()
-            
+        
             if action is not None:
-                records = records.only("action").filter(action__name=action).only("itinary").filter(itinary__region=region)
+                records = records.only("action").filter(action__in=action.split(";"))
             if collector is not None:
-                records = records.only("collector").filter(collector__name=collector).only("itinary").filter(itinary__region=region)
+                records = records.only("collector").filter(collector__in=collector.split(";"))
             if enterprise is not None:
-                records = records.only("enterprise").filter(enterprise__name=enterprise).only("itinary").filter(itinary__region=region)
+                records = records.only("enterprise").filter(enterprise__in=enterprise.split(";"))
             if min_date is not None:
                 date = datetime.strptime(min_date, DATETIME_FORMAT)
                 records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC)).only("itinary").filter(itinary__region=region)
