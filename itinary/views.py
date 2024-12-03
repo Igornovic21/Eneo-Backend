@@ -127,12 +127,12 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
         min_date = request.GET.get("min_date", None)
         max_date = request.GET.get("max_date", None)
 
-        if action is None and collector is None and enterprise is None and min_date is None and max_date is None:
-            logger.error("Provide at least one filter params (params, collector, enterprise, start_date, end_date)")
-            return Response({
-                "status": False,
-                "message": "Provide at least one filter params (params, collector, enterprise, start_date, end_date)",
-            }, status=status.HTTP_400_BAD_REQUEST)
+        # if action is None and collector is None and enterprise is None and min_date is None and max_date is None:
+        #     logger.error("Provide at least one filter params (params, collector, enterprise, start_date, end_date)")
+        #     return Response({
+        #         "status": False,
+        #         "message": "Provide at least one filter params (params, collector, enterprise, start_date, end_date)",
+        #     }, status=status.HTTP_400_BAD_REQUEST)
 
         records = Record.objects.only("itinary").filter(itinary=itinary)
         
