@@ -1,8 +1,9 @@
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.utils.timezone import make_aware
+from django.db.models import Count
 
-from rest_framework.decorators import authentication_classes
+from rest_framework.decorators import authentication_classes, action
 
 from rest_framework import status
 from rest_framework.viewsets import ViewSet
@@ -12,7 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from authorization.authentication import ExpiringTokenAuthentication
 
 from constants.config import DATETIME_FORMAT
-from record.serializers.output_serializer import RecordSerializer
+from record.serializers.output_serializer import RecordSerializer, ActionStatSerializer, EnterpriseStatSerializer, CollectorStatSerializer
 
 from utils.logger import logger
 from utils.statistics import build_statistics
@@ -25,6 +26,8 @@ from record.models import Record
 class RecordViewSet(ViewSet, PaginationHandlerMixin):
     pagination_class = BasicPagination
     serializer_class = RecordSerializer
+    action_stat_serializer_class = ActionStatSerializer
+    enterprise_stat_serializer_class = EnterpriseStatSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk:str):
@@ -59,10 +62,19 @@ class RecordViewSet(ViewSet, PaginationHandlerMixin):
             serializer = self.get_paginated_response(self.serializer_class(page, many=True).data)
         else:
             serializer = self.serializer_class(records, many=True)
+
+        action_stats = records.values("action__name").annotate(total=Count("action"))
+        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
+        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
+        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
         logger.warning("Records stats loaded")
         return Response({
             "status": True,
             "message": "Records stats loaded",
+            "statistics": {
+                "action": serializer_action_stats.data,
+                "enterprise": serializer_enterprise_stats.data,
+            },
             "detail": serializer.data
         }, status=status.HTTP_200_OK)
 
@@ -71,6 +83,9 @@ class RecordViewSet(ViewSet, PaginationHandlerMixin):
 class RecordFilterSet(ViewSet, PaginationHandlerMixin):
     pagination_class = BasicPagination
     serializer_class = RecordSerializer
+    action_stat_serializer_class = ActionStatSerializer
+    enterprise_stat_serializer_class = EnterpriseStatSerializer
+    collector_stat_serializer_class = CollectorStatSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk:str):
@@ -128,6 +143,10 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
             records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
 
         # statictics = build_statistics(records)
+        action_stats = records.values("action__name").annotate(total=Count("action"))
+        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
+        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
+        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
 
         page = self.paginate_queryset(records)
         if page is not None:
@@ -138,6 +157,88 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
         return Response({
             "status": True,
             "message": "Filtered records stats loaded",
-            # "statictics": statictics,
+            "statistics": {
+                "action": serializer_action_stats.data,
+                "enterprise": serializer_enterprise_stats.data,
+            },
             "detail": serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'], name='compare', url_name='compare', permission_classes=[IsAuthenticated])
+    def compare(self, request):
+        date = request.GET.get("date", None)
+        region = request.GET.get("region-id", None)
+
+        if date is None:
+            logger.error("Provide date required params")
+            return Response({
+                "status": False,
+                "message": "Provide date required params",
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        records = Record.objects.all()
+        
+        if region is not None:
+            records = records.only("itinary").filter(itinary__region=region)
+        if date is not None:
+            date = datetime.strptime(date, DATETIME_FORMAT)
+            past_date = date - timedelta(days=2)
+            records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC))
+            past_records = records.only("date").filter(date__gt=make_aware(past_date, timezone=pytz.UTC))
+            
+        action_stats = records.values("action__name").annotate(total=Count("action")).exclude(action__name=None)
+        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise")).exclude(enterprise__name=None)
+        past_action_stats = past_records.values("action__name").annotate(total=Count("action")).exclude(action__name=None)
+        past_enterprise_stats = past_records.values("enterprise__name").annotate(total=Count("enterprise")).exclude(enterprise__name=None)
+        
+        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
+        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
+        serializer_past_action_stats = self.action_stat_serializer_class(past_action_stats, many=True)
+        serializer_past_enterprise_stats = self.enterprise_stat_serializer_class(past_enterprise_stats, many=True)
+
+        logger.warning("Comparaison stats loaded")
+        return Response({
+            "status": True,
+            "message": "Comparaison stats loaded",
+            "detail": {
+                "selected_date": {
+                    "action": serializer_action_stats.data,
+                    "enterprise": serializer_enterprise_stats.data,
+                },
+                "past_date": {
+                    "action": serializer_past_action_stats.data,
+                    "enterprise": serializer_past_enterprise_stats.data,
+                }
+            }
+        }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'], name='ranking', url_name='ranking', permission_classes=[IsAuthenticated])
+    def ranking(self, request):
+        region = request.GET.get("region-id", None)
+        itinary = request.GET.get("itinary-id", None)
+
+        records = Record.objects.all()
+        
+        if region is not None:
+            records = records.only("itinary").filter(itinary__region=region)
+        elif itinary is not None:
+            records = records.only("itinary").filter(itinary=itinary)
+            
+        action_stats = records.values("action__name").annotate(total=Count("action")).exclude(action__name=None).order_by("-total")
+        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise")).exclude(enterprise__name=None).order_by("-total")
+        collector_stats = records.values("collector__name").annotate(total=Count("collector")).exclude(collector__name=None).order_by("-total")
+        
+        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
+        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
+        serializer_collector_stats = self.collector_stat_serializer_class(collector_stats, many=True)
+
+        logger.warning("Ranking stats loaded")
+        return Response({
+            "status": True,
+            "message": "Ranking stats loaded",
+            "detail": {
+                "action": serializer_action_stats.data,
+                "enterprise": serializer_enterprise_stats.data,
+                "collector": serializer_collector_stats.data,
+            }
         }, status=status.HTTP_200_OK)

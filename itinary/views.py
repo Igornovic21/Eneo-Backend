@@ -1,6 +1,7 @@
 import pytz
 from datetime import datetime
 from django.utils.timezone import make_aware
+from django.db.models import Count
 
 from rest_framework.decorators import authentication_classes
 
@@ -12,7 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from authorization.authentication import ExpiringTokenAuthentication
 
 from constants.config import DATETIME_FORMAT
-from record.serializers.output_serializer import RecordSerializer
+from record.serializers.output_serializer import RecordSerializer, ActionStatSerializer, EnterpriseStatSerializer
 from itinary.serializers.output_serializer import ItinarySerializer
 
 from utils.logger import logger
@@ -28,6 +29,8 @@ class ItinaryViewSet(ViewSet, PaginationHandlerMixin):
     pagination_class = BasicPagination
     serializer_class = RecordSerializer
     itinary_serializer = ItinarySerializer
+    action_stat_serializer_class = ActionStatSerializer
+    enterprise_stat_serializer_class = EnterpriseStatSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk:str):
@@ -81,10 +84,19 @@ class ItinaryViewSet(ViewSet, PaginationHandlerMixin):
             serializer = self.get_paginated_response(self.serializer_class(page, many=True).data)
         else:
             serializer = self.serializer_class(records, many=True)
+
+        action_stats = records.values("action__name").annotate(total=Count("action"))
+        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
+        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
+        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
         logger.warning("Itinary stats loaded")
         return Response({
             "status": True,
             "message": "Itinary stats loaded",
+            "statistics": {
+                "action": serializer_action_stats.data,
+                "enterprise": serializer_enterprise_stats.data,
+            },
             "detail": serializer.data
         }, status=status.HTTP_200_OK)
 
@@ -93,6 +105,8 @@ class ItinaryViewSet(ViewSet, PaginationHandlerMixin):
 class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
     pagination_class = BasicPagination
     serializer_class = RecordSerializer
+    action_stat_serializer_class = ActionStatSerializer
+    enterprise_stat_serializer_class = EnterpriseStatSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk:str):
@@ -150,6 +164,10 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
             records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
 
         # statictics = build_statistics(records)
+        action_stats = records.values("action__name").annotate(total=Count("action"))
+        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
+        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
+        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
 
         page = self.paginate_queryset(records)
         if page is not None:
@@ -160,6 +178,9 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
         return Response({
             "status": True,
             "message": "Filtered itinary stats loaded",
-            # "statictics": statictics,
+            "statistics": {
+                "action": serializer_action_stats.data,
+                "enterprise": serializer_enterprise_stats.data,
+            },
             "detail": serializer.data
         }, status=status.HTTP_200_OK)
