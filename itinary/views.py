@@ -17,7 +17,6 @@ from record.serializers.output_serializer import RecordSerializer, ActionStatSer
 from itinary.serializers.output_serializer import ItinarySerializer
 
 from utils.logger import logger
-from utils.statistics import build_statistics
 from utils.pagination import PaginationHandlerMixin, BasicPagination
 
 from region.models import Region
@@ -163,7 +162,6 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
             date = datetime.strptime(max_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
 
-        # statictics = build_statistics(records)
         action_stats = records.values("action__name").annotate(total=Count("action"))
         enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
         serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)

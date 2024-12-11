@@ -2,6 +2,7 @@ import uuid
 
 from django.utils import timezone
 from django.db import models
+from django.db.models import Func, Index
 
 from itinary.models import Itinary
 
@@ -58,6 +59,11 @@ class Enterprise(models.Model):
         indexes = [
             models.Index(fields=['name']),
         ]
+
+
+class MD5(Func):
+    function = 'MD5'
+    output_field = models.CharField()
 
 
 class Record(models.Model):

@@ -1,5 +1,5 @@
 import pytz
-from datetime import datetime, timedelta
+from datetime import datetime
 from django.utils.timezone import make_aware
 from django.db.models import Count
 
@@ -16,7 +16,6 @@ from constants.config import DATETIME_FORMAT
 from record.serializers.output_serializer import RecordSerializer, ActionStatSerializer, EnterpriseStatSerializer, CollectorStatSerializer
 
 from utils.logger import logger
-from utils.statistics import build_statistics
 from utils.pagination import PaginationHandlerMixin, BasicPagination
 
 from region.models import Region
@@ -142,11 +141,12 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
             date = datetime.strptime(max_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
 
-        # statictics = build_statistics(records)
         action_stats = records.values("action__name").annotate(total=Count("action"))
         enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
         serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
         serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
+
+        active_records = records.only("data").filter(data__contains='"pl/info_pl/status": "actif"')
 
         page = self.paginate_queryset(records)
         if page is not None:
@@ -157,6 +157,7 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
         return Response({
             "status": True,
             "message": "Filtered records stats loaded",
+            "percentage": round(len(active_records) / len(records), 2) * 100,
             "statistics": {
                 "action": serializer_action_stats.data,
                 "enterprise": serializer_enterprise_stats.data,
@@ -166,48 +167,51 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
     
     @action(detail=False, methods=['get'], name='compare', url_name='compare', permission_classes=[IsAuthenticated])
     def compare(self, request):
-        date = request.GET.get("date", None)
+        min_date = request.GET.get("min_date", None)
+        max_date = request.GET.get("max_date", None)
+
         region = request.GET.get("region-id", None)
 
-        if date is None:
-            logger.error("Provide date required params")
+        if min_date is None or max_date is None:
+            logger.error("Provide min_date and max_date required params")
             return Response({
                 "status": False,
-                "message": "Provide date required params",
+                "message": "Provide min_date and max_date required params",
             }, status=status.HTTP_400_BAD_REQUEST)
 
         records = Record.objects.all()
         
         if region is not None:
             records = records.only("itinary").filter(itinary__region=region)
-        if date is not None:
-            date = datetime.strptime(date, DATETIME_FORMAT)
-            past_date = date - timedelta(days=2)
-            records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC))
-            past_records = records.only("date").filter(date__gt=make_aware(past_date, timezone=pytz.UTC))
-            
-        action_stats = records.values("action__name").annotate(total=Count("action")).exclude(action__name=None)
-        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise")).exclude(enterprise__name=None)
-        past_action_stats = past_records.values("action__name").annotate(total=Count("action")).exclude(action__name=None)
-        past_enterprise_stats = past_records.values("enterprise__name").annotate(total=Count("enterprise")).exclude(enterprise__name=None)
         
-        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
-        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
-        serializer_past_action_stats = self.action_stat_serializer_class(past_action_stats, many=True)
-        serializer_past_enterprise_stats = self.enterprise_stat_serializer_class(past_enterprise_stats, many=True)
+        
+        min_date = datetime.strptime(min_date, DATETIME_FORMAT)
+        max_date = datetime.strptime(max_date, DATETIME_FORMAT)
+        min_records = records.only("date").filter(date__gt=make_aware(min_date, timezone=pytz.UTC))
+        max_records = records.only("date").filter(date__gt=make_aware(max_date, timezone=pytz.UTC))
+            
+        min_action_stats = min_records.values("action__name").annotate(total=Count("action")).exclude(action__name=None)
+        min_enterprise_stats = min_records.values("enterprise__name").annotate(total=Count("enterprise")).exclude(enterprise__name=None)
+        max_action_stats = max_records.values("action__name").annotate(total=Count("action")).exclude(action__name=None)
+        max_enterprise_stats = max_records.values("enterprise__name").annotate(total=Count("enterprise")).exclude(enterprise__name=None)
+        
+        serializer_min_action_stats = self.action_stat_serializer_class(min_action_stats, many=True)
+        serializer_min_enterprise_stats = self.enterprise_stat_serializer_class(min_enterprise_stats, many=True)
+        serializer_max_action_stats = self.action_stat_serializer_class(max_action_stats, many=True)
+        serializer_max_enterprise_stats = self.enterprise_stat_serializer_class(max_enterprise_stats, many=True)
 
         logger.warning("Comparaison stats loaded")
         return Response({
             "status": True,
             "message": "Comparaison stats loaded",
             "detail": {
-                "selected_date": {
-                    "action": serializer_action_stats.data,
-                    "enterprise": serializer_enterprise_stats.data,
+                "min_date": {
+                    "action": serializer_min_action_stats.data,
+                    "enterprise": serializer_min_enterprise_stats.data,
                 },
-                "past_date": {
-                    "action": serializer_past_action_stats.data,
-                    "enterprise": serializer_past_enterprise_stats.data,
+                "max_date": {
+                    "action": serializer_max_action_stats.data,
+                    "enterprise": serializer_max_enterprise_stats.data,
                 }
             }
         }, status=status.HTTP_200_OK)
@@ -223,10 +227,10 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
             records = records.only("itinary").filter(itinary__region=region)
         elif itinary is not None:
             records = records.only("itinary").filter(itinary=itinary)
-            
-        action_stats = records.values("action__name").annotate(total=Count("action")).exclude(action__name=None).order_by("-total")
-        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise")).exclude(enterprise__name=None).order_by("-total")
-        collector_stats = records.values("collector__name").annotate(total=Count("collector")).exclude(collector__name=None).order_by("-total")
+        
+        action_stats = records.values("action__name").annotate(total=Count("action")).exclude(action__name=None).order_by("-total")[:4]
+        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise")).exclude(enterprise__name=None).order_by("-total")[:4]
+        collector_stats = records.values("collector__name").annotate(total=Count("collector")).exclude(collector__name=None).order_by("-total")[:4]
         
         serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
         serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
