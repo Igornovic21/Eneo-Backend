@@ -38,7 +38,7 @@ class RegionViewSet(ViewSet, PaginationHandlerMixin):
         
     def list(self, request):
         datas = []
-        regions = Region.objects.all()
+        regions = request.user.region.all()
         for region in regions:
             records = Record.objects.only('itinary').filter(itinary__region=region)
             datas.append({
@@ -89,7 +89,7 @@ class RegionFilterSet(ViewSet, PaginationHandlerMixin):
         #     }, status=status.HTTP_400_BAD_REQUEST)
 
         datas = []
-        regions = Region.objects.all()
+        regions = request.user.region.all()
 
         for region in regions:
             records = Record.objects.only("itinary").filter(itinary__region=region)

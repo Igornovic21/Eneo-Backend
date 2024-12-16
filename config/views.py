@@ -56,7 +56,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             return Response(data, status=status.HTTP_404_NOT_FOUND)
 
     def list(self, request):
-        regions = Region.objects.all()
+        regions = request.user.region.all()
         actions = Action.objects.all()
         enterprises = Enterprise.objects.all()
 
@@ -94,7 +94,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
     
     @action(detail=False, methods=['get'], name='export', url_name='export', permission_classes=[AllowAny])
     def export(self, request):
-        # region = request.GET.get("region", None)
+        region = request.GET.get("region", None)
         # # itinary = request.GET.get("itinary", None)
         # action = request.GET.get("action", None)
         # collector = request.GET.get("collector", None)
@@ -132,6 +132,12 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
         #     "detail": serializer.data
         # }, status=status.HTTP_200_OK)
         region = request.GET.get("region", None)
+        
+        if region not in request.user.region.all():
+            return Response({
+                "status": False,
+                "message": "This region is not assigned to this user"
+            }, status=status.HTTP_403_FORBIDDEN)
         
         records = Record.objects.only("itinary").filter(itinary__region=region)
 

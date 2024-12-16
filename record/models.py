@@ -61,9 +61,18 @@ class Enterprise(models.Model):
         ]
 
 
-class MD5(Func):
-    function = 'MD5'
-    output_field = models.CharField()
+# class Pl(models.Model):
+#     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
+
+#     type = models.CharField(max_length=100, default="")
+#     status = models.CharField(max_length=100, default="")
+#     serial_number = models.CharField(max_length=100, default="")
+
+#     date_created = models.DateTimeField(auto_now_add=True)
+#     date_updated = models.DateTimeField(auto_now=True)
+    
+#     def __str__(self) -> str:
+#         return self.serial_number
 
 
 class Record(models.Model):

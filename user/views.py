@@ -22,6 +22,8 @@ from authorization.authentication import ExpiringTokenAuthentication, account_ac
 from user.functions.login_user import login_user
 from user.serializers.input_serializer import ChangePasswordSerializer, LoginSerializer, ResetPasswordSerializer, RegisterSerialiser
 from user.serializers.output_serializer import UserSerializer
+from region.serializers.output_serializer import RegionSerializer
+
 from user.models import User
 
 
@@ -32,6 +34,7 @@ class AuthViewSet(ViewSet):
     change_password_serializer = ChangePasswordSerializer
     reset_password_serializer = ResetPasswordSerializer
     login_serializer = LoginSerializer
+    region_serializer = RegionSerializer
     
     def get_object(self, email:str):
         try:
@@ -169,11 +172,13 @@ class AuthViewSet(ViewSet):
             
         if account.is_active:
             user_serializer = self.serializer_class(account, many=False)
+            data = user_serializer.data
+            data["regions"] = self.region_serializer(request.user.region.all(), many=True).data
             logger.info("Compte connecté avec succès")
             return Response({
                 "status": True,
                 "message": "Compte connecté avec succès",
-                "detail": user_serializer.data
+                "detail": data
             }, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], name='reset-password', url_name='reset-password', permission_classes=[AllowAny])

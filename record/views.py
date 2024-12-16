@@ -54,6 +54,11 @@ class RecordViewSet(ViewSet, PaginationHandlerMixin):
     def retrieve(self, request, pk=None):
         region = self.get_region_object(pk=pk)
         if type(region) is Response : return region
+        if region not in request.user.region.all():
+            return Response({
+                "status": False,
+                "message": "This region is not assigned to this user"
+            }, status=status.HTTP_403_FORBIDDEN)
 
         records = Record.objects.only('itinary').filter(itinary__region=region)
         page = self.paginate_queryset(records)
@@ -112,6 +117,11 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
     def retrieve(self, request, pk=None):
         region = self.get_region_object(pk=pk)
         if type(region) is Response : return region
+        if region not in request.user.region.all():
+            return Response({
+                "status": False,
+                "message": "This region is not assigned to this user"
+            }, status=status.HTTP_403_FORBIDDEN)
 
         action = request.GET.get("action", None)
         collector = request.GET.get("collector", None)
@@ -179,9 +189,14 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
                 "message": "Provide min_date and max_date required params",
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        records = Record.objects.all()
+        records = Record.objects.only("itinary").filter(itinary__region__in=request.user.region.all())
         
         if region is not None:
+            if region not in request.user.region.all():
+                return Response({
+                    "status": False,
+                    "message": "This region is not assigned to this user"
+                }, status=status.HTTP_403_FORBIDDEN)
             records = records.only("itinary").filter(itinary__region=region)
         
         
@@ -219,14 +234,19 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
     @action(detail=False, methods=['get'], name='ranking', url_name='ranking', permission_classes=[IsAuthenticated])
     def ranking(self, request):
         region = request.GET.get("region-id", None)
-        itinary = request.GET.get("itinary-id", None)
+        # itinary = request.GET.get("itinary-id", None)
 
-        records = Record.objects.all()
+        records = Record.objects.only("itinary").filter(itinary__region__in=request.user.region.all())
         
         if region is not None:
+            if region not in request.user.region.all():
+                return Response({
+                    "status": False,
+                    "message": "This region is not assigned to this user"
+                }, status=status.HTTP_403_FORBIDDEN)
             records = records.only("itinary").filter(itinary__region=region)
-        elif itinary is not None:
-            records = records.only("itinary").filter(itinary=itinary)
+        # elif itinary is not None:
+        #     records = records.only("itinary").filter(itinary=itinary)
         
         action_stats = records.values("action__name").annotate(total=Count("action")).exclude(action__name=None).order_by("-total")[:4]
         enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise")).exclude(enterprise__name=None).order_by("-total")[:4]
