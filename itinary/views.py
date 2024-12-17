@@ -55,7 +55,7 @@ class ItinaryViewSet(ViewSet, PaginationHandlerMixin):
             return Response(data, status=status.HTTP_404_NOT_FOUND)
 
     def list(self, request):
-        itinaries = Itinary.objects.all().order_by("name")
+        itinaries = Itinary.objects.only("itinary").filter(itinary__region__in=request.user.region.all()).order_by("name")
         
         query = request.GET.get("query", None)
         if query is not None:
@@ -104,6 +104,7 @@ class ItinaryViewSet(ViewSet, PaginationHandlerMixin):
 class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
     pagination_class = BasicPagination
     serializer_class = RecordSerializer
+    itinary_serializer = ItinarySerializer
     action_stat_serializer_class = ActionStatSerializer
     enterprise_stat_serializer_class = EnterpriseStatSerializer
     permission_classes = [IsAuthenticated]
@@ -130,9 +131,33 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
             logger.warning("This region does not exist")
             return Response(data, status=status.HTTP_404_NOT_FOUND)
 
+    def list(self, request):
+        itinaries = Itinary.objects.only("region").filter(region__in=request.user.region.all()).order_by("name")
+        
+        query = request.GET.get("query", None)
+        if query is not None:
+            itinaries = itinaries.only("name").filter(name__icontains=query)
+
+        page = self.paginate_queryset(itinaries)
+        if page is not None:
+            serializer = self.get_paginated_response(self.itinary_serializer(page, many=True).data)
+        else:
+            serializer = self.itinary_serializer(itinaries, many=True)
+        logger.warning("Itinary list loaded")
+        return Response({
+            "status": True,
+            "message": "Itinary list loaded",
+            "detail": serializer.data
+        }, status=status.HTTP_200_OK)
+
     def retrieve(self, request, pk=None):
         itinary = self.get_object(pk=pk)
         if type(itinary) is Response : return itinary
+        if itinary.region not in request.user.region.all():
+            return Response({
+                "status": False,
+                "message": "This region is not assigned to this user"
+            }, status=status.HTTP_403_FORBIDDEN)
 
         action = request.GET.get("action", None)
         collector = request.GET.get("collector", None)

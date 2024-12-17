@@ -96,7 +96,7 @@ class Record(models.Model):
         return self.ona_id + " " + self.itinary.name
     
     class Meta:
-        ordering = ['date']
+        ordering = ['-date']
         indexes = [
             models.Index(fields=['itinary']),
             models.Index(fields=['ona_id']),

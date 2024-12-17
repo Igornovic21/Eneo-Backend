@@ -2,7 +2,7 @@ import pytz
 from datetime import datetime
 from django.utils.timezone import make_aware
 
-from rest_framework.decorators import authentication_classes
+from rest_framework.decorators import authentication_classes, action
 from rest_framework import status
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
@@ -10,14 +10,16 @@ from rest_framework.permissions import IsAuthenticated
 
 from authorization.authentication import ExpiringTokenAuthentication
 
-from constants.config import DATETIME_FORMAT
 from region.serializers.output_serializer import RegionStatSerializer
+from itinary.serializers.output_serializer import ItinarySerializer
 
+from constants.config import DATETIME_FORMAT
 from utils.logger import logger
 from utils.pagination import PaginationHandlerMixin, BasicPagination
 
 from region.models import Region
 from record.models import Record
+from itinary.models import Itinary
 
 @authentication_classes([ExpiringTokenAuthentication])
 class RegionViewSet(ViewSet, PaginationHandlerMixin):
@@ -60,6 +62,7 @@ class RegionViewSet(ViewSet, PaginationHandlerMixin):
 @authentication_classes([ExpiringTokenAuthentication])
 class RegionFilterSet(ViewSet, PaginationHandlerMixin):
     pagination_class = BasicPagination
+    itinary_serializer = ItinarySerializer
     serializer_class = RegionStatSerializer
     permission_classes = [IsAuthenticated]
 
@@ -118,5 +121,33 @@ class RegionFilterSet(ViewSet, PaginationHandlerMixin):
         return Response({
             "status": True,
             "message": "Filtered regions stats loaded",
+            "detail": serializer.data
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], name='itinary', url_name='itinary', permission_classes=[IsAuthenticated])
+    def itinary(self, request, pk=None):
+        region = self.get_object(pk=pk)
+        if type(region) is Response : return region
+        if region not in request.user.region.all():
+            return Response({
+                "status": False,
+                "message": "This region is not assigned to this user"
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        itinaries = Itinary.objects.only("region").filter(region=region).order_by("name")
+        
+        query = request.GET.get("query", None)
+        if query is not None:
+            itinaries = itinaries.only("name").filter(name__icontains=query)
+
+        page = self.paginate_queryset(itinaries)
+        if page is not None:
+            serializer = self.get_paginated_response(self.itinary_serializer(page, many=True).data)
+        else:
+            serializer = self.itinary_serializer(itinaries, many=True)
+        logger.warning("Itinary list loaded")
+        return Response({
+            "status": True,
+            "message": "Itinary list loaded",
             "detail": serializer.data
         }, status=status.HTTP_200_OK)
