@@ -78,7 +78,7 @@ class Enterprise(models.Model):
 class Record(models.Model):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
 
-    itinary = models.ForeignKey(Itinary, on_delete=models.DO_NOTHING, null=True, blank=True, related_name="records")
+    itinary = models.ForeignKey(Itinary, on_delete=models.DO_NOTHING, default=None, null=True, blank=True, related_name="records")
     ona_id = models.CharField(max_length=100, editable=False, unique=True)
     data = models.TextField()
     full_data = models.TextField()

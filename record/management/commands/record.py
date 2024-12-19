@@ -6,11 +6,11 @@ from django.core.management.base import BaseCommand
 
 from constants.config import ONA_PROJECT
 from constants.ona_api import ONA_DATA_URL, ONA_PROJECT_URL
-from utils.logger import logger
 
 from config.models import Credential
 from record.models import Record, Collector, Action, Enterprise
 from itinary.models import Itinary
+from region.constants import SRID
 
 class Command(BaseCommand):
     help = 'Get list of data for any FormConfig Save in th App'
@@ -62,7 +62,7 @@ class Command(BaseCommand):
                         if field in data.keys():
                             result[field] = data[field]
                         else:
-                            result[field] = ""
+                            result[field] = None
                     
                     record.data = json.dumps(result)
                     record.full_data = json.dumps(data)
@@ -70,13 +70,13 @@ class Command(BaseCommand):
                     record.collector = collector
                     record.enterprise = enterprise
                     record.date = date
-                    point = Point(longitude, latitude)
-                    results = Itinary.objects.only("boundary").filter(boundary__contains=point)
-                    if results.exists():
-                        record.itinary = results[0]
+                    point = Point(longitude, latitude, srid=SRID)
+                    itinaries = Itinary.objects.only("boundary").filter(boundary__contains=point)
+                    if itinaries.exists():
+                        record.itinary = itinaries[0]
                         record.save()
                     else:
                         self.stdout.write("No itinary found for this submission {}".format(ona_id))
                 except:
-                    self.stdout.write(self.style.SUCCESS("Error during single reord process"))
+                    self.stdout.write(self.style.ERROR("Error during single reord process"))
             self.stdout.write(self.style.SUCCESS("All data loaded for form {}".format(form["name"] or "Unknow")))
