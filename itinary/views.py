@@ -2,8 +2,9 @@ import pytz
 from datetime import datetime
 from django.utils.timezone import make_aware
 from django.db.models import Count
+from django.contrib.gis.geos import Point
 
-from rest_framework.decorators import authentication_classes
+from rest_framework.decorators import authentication_classes, action
 
 from rest_framework import status
 from rest_framework.viewsets import ViewSet
@@ -16,6 +17,7 @@ from constants.config import DATETIME_FORMAT
 from record.serializers.output_serializer import RecordSerializer, ActionStatSerializer, EnterpriseStatSerializer
 from itinary.serializers.output_serializer import ItinarySerializer
 
+from region.constants import SRID
 from utils.logger import logger
 from utils.pagination import PaginationHandlerMixin, BasicPagination
 
@@ -201,6 +203,72 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
         return Response({
             "status": True,
             "message": "Filtered itinary stats loaded",
+            "statistics": {
+                "action": serializer_action_stats.data,
+                "enterprise": serializer_enterprise_stats.data,
+            },
+            "detail": serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'], name='coords', url_name='coords', permission_classes=[IsAuthenticated])
+    def coords(self, request):
+        action = request.GET.get("action", None)
+        collector = request.GET.get("collector", None)
+        enterprise = request.GET.get("enterprise", None)
+        min_date = request.GET.get("min_date", None)
+        max_date = request.GET.get("max_date", None)
+        longitude = request.GET.get("lng", None)
+        latitude = request.GET.get("lat", None)
+        
+        if longitude is None or latitude is None:
+            logger.error("Provide lng and lat required params")
+            return Response({
+                "status": False,
+                "message": "Provide lng and lat required params",
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        point = Point(float(latitude), float(longitude), srid=SRID)
+        itinaries = Itinary.objects.only("boundary").filter(boundary__contains=point)
+        
+        if not itinaries.exists():
+            logger.error("No itinary found for this point")
+            return Response({
+                "status": False,
+                "message": "No itinary found for this point",
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        itinary = itinaries[0]
+        
+        records = Record.objects.only("itinary").filter(itinary=itinary)
+        
+        if action is not None:
+            records = records.only("action").filter(action__in=action.split(";"))
+        if collector is not None:
+            records = records.only("collector").filter(collector__in=collector.split(";"))
+        if enterprise is not None:
+            records = records.only("enterprise").filter(enterprise__in=enterprise.split(";"))
+        if min_date is not None:
+            date = datetime.strptime(min_date, DATETIME_FORMAT)
+            records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC))
+        if max_date is not None:
+            date = datetime.strptime(max_date, DATETIME_FORMAT)
+            records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
+
+        action_stats = records.values("action__name").annotate(total=Count("action"))
+        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
+        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
+        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
+
+        page = self.paginate_queryset(records)
+        if page is not None:
+            serializer = self.get_paginated_response(self.serializer_class(page, many=True).data)
+        else:
+            serializer = self.serializer_class(records, many=True)
+
+        logger.warning("Pl records stats loaded")
+        return Response({
+            "status": True,
+            "message": "Pl records stats loaded",
             "statistics": {
                 "action": serializer_action_stats.data,
                 "enterprise": serializer_enterprise_stats.data,
