@@ -45,6 +45,7 @@ SECRET_KEY = 'django-insecure-yavj2qd^x7m*l5o=ea1z*so6e0xmpe@e@_j4tz%nmccor^eq8j
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+CSRF_TRUSTED_ORIGINS = ["https://eneoservices.position.cm", "http://eneoservices.position.cm"]
 ALLOWED_HOSTS = ["*"]
 
 
