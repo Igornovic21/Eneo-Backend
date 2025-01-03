@@ -178,6 +178,9 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
     @action(detail=False, methods=['get'], name='pl', url_name='pl', permission_classes=[IsAuthenticated])
     def pl(self, request):
         serial_number = request.GET.get("serial_number", None)
+        min_date = request.GET.get("min_date", None)
+        max_date = request.GET.get("max_date", None)
+
         if serial_number is None :
             logger.error("Provide serial_number required params")
             return Response({
@@ -186,6 +189,12 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         records = Record.objects.only("itinary").filter(itinary__region__in=request.user.region.all())
+        if min_date is not None:
+            date = datetime.strptime(min_date, DATETIME_FORMAT)
+            records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC))
+        if max_date is not None:
+            date = datetime.strptime(max_date, DATETIME_FORMAT)
+            records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
         records = records.only("data").filter(data__icontains='"pl/info_pl/serial_number": "{}"'.format(serial_number)).order_by("-date")
 
         page = self.paginate_queryset(records)
