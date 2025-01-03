@@ -195,6 +195,7 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
         if max_date is not None:
             date = datetime.strptime(max_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
+            
         records = records.only("data").filter(data__icontains='"pl/info_pl/serial_number": "{}"'.format(serial_number)).order_by("-date")
 
         page = self.paginate_queryset(records)

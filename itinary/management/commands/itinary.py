@@ -25,8 +25,22 @@ class Command(BaseCommand):
         for index, feature in enumerate(itinary_data['features']):
             properties = feature["properties"]
             try :
-                key = "{} - {}".format(properties["REGION"], index) if properties["REPERE"] is None else properties["REPERE"] + " - {}".format(index)
-                region = feature["properties"]["REGION"]
+                key = ""
+                region = properties["REGION"]
+                repere = properties["REPERE"]
+                localite = properties["LOCALITE"]
+                block_code = properties["BLOCK_CODE"]
+                # key = "{} - {}".format(properties["REGION"], index) if properties["REPERE"] is None else properties["REPERE"] + " - {}".format(index)
+                
+                if repere is not None:
+                    key = repere
+                elif localite is not None:
+                    key = localite
+                elif block_code is not None:
+                    key = block_code
+                elif region is not None:
+                    key = "UNKNOW " + region
+
                 # geometry = feature["geometry"]
                 geometry = GEOSGeometry(json.dumps(feature["geometry"]))
                 
@@ -47,8 +61,16 @@ class Command(BaseCommand):
                 # multi_polygon = MultiPolygon(polygons)
 
                 region, _ = Region.objects.get_or_create(name=region)
-                itinary, _ = Itinary.objects.get_or_create(name=key)
+                itinaries = Itinary.objects.only("name").filter(name__icontains=key)
+
+                # if itinaries.exists():
+                #     itinary = Itinary.objects.create(name=key + " - {}".format(len(itinaries) + 1))
+                # else:
+                #     itinary = Itinary.objects.create(name=key)
+                itinary = Itinary.objects.create(name=key)
+
                 itinary.region = region
+                itinary.block_code = block_code
                 # itinary.boundary = multi_polygon
                 itinary.boundary = geometry
                 itinary.save()

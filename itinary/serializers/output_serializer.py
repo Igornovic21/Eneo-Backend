@@ -14,7 +14,7 @@ class ItinarySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Itinary
-        fields = ["id", "name", "region", "records"]
+        fields = ["id", "name", "region", "block_code", "records"]
 
     def get_records(self, obj):
         return obj.records.count()
