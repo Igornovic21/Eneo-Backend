@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action, authentication_classes
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 
 from user.functions.check_password import password_check
 
@@ -25,6 +25,7 @@ from user.serializers.output_serializer import UserSerializer
 from region.serializers.output_serializer import RegionSerializer
 
 from user.models import User
+from region.models import Region
 
 
 @authentication_classes([ExpiringTokenAuthentication])
@@ -51,7 +52,7 @@ class AuthViewSet(ViewSet):
     def list(self, request):
         return Response({"message": "This is the auth base url"}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], name='register', url_name='register', permission_classes=[AllowAny])
+    @action(detail=False, methods=['post'], name='register', url_name='register', permission_classes=[IsAdminUser])
     def register(self, request):
         serializer = self.register_serializer(data=request.data)
         if serializer.is_valid():
@@ -164,6 +165,51 @@ class AuthViewSet(ViewSet):
             "message": "Données saisies invalides",
             "detail": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'], name='user', url_name='user', permission_classes=[IsAdminUser])
+    def user(self, request):
+        users_data = []
+        users = User.objects.exclude(is_superuser=True)
+
+        for user in users:
+            user_serializer = self.serializer_class(user, many=False)
+            data = user_serializer.data
+            data["regions"] = self.region_serializer(user.region.all(), many=True).data
+            users_data.append(data)
+
+        logger.info("User list generated successfully")
+        return Response({
+            "status": True,
+            "message": "User list generated successfully",
+            "detail": users_data
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['put'], name='region', url_name='region', permission_classes=[IsAdminUser])
+    def region(self, request):
+        data = request.data
+        print(data)
+        try:
+            user = User.objects.get(id=data["user"])
+        except Exception as e:
+            logger.error("User not found")
+            return Response({
+                "status": True,
+                "message": "User not found",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        user.region.clear()
+        user.save()
+
+        for region in data["regions"]:
+            user.region.add(region)
+        
+        user.save()
+
+        logger.info("Regions assigned to the user successfully")
+        return Response({
+            "status": True,
+            "message": "Regions assigned to the user successfully",
+        }, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], name='info', url_name='info', permission_classes=[IsAuthenticated])
     def info(self, request):

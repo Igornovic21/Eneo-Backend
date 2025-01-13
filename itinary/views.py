@@ -60,8 +60,9 @@ class ItinaryViewSet(ViewSet, PaginationHandlerMixin):
         itinaries = Itinary.objects.only("itinary").filter(itinary__region__in=request.user.region.all()).order_by("name")
         
         query = request.GET.get("query", None)
+        print(query)
         if query is not None:
-            itinaries = itinaries.only("name").filter(name__icontains=query)
+            itinaries = itinaries.only("block_code").filter(block_code=query)
 
         page = self.paginate_queryset(itinaries)
         if page is not None:
@@ -134,11 +135,11 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
             return Response(data, status=status.HTTP_404_NOT_FOUND)
 
     def list(self, request):
-        itinaries = Itinary.objects.only("region").filter(region__in=request.user.region.all()).distinct("name").order_by("name")
+        itinaries = Itinary.objects.only("region").filter(region__in=request.user.region.all()).order_by("name")
         
         query = request.GET.get("query", None)
         if query is not None:
-            itinaries = itinaries.only("name").filter(name__icontains=query).distinct("name")
+            itinaries = itinaries.only("block_code").filter(block_code=query)
 
         page = self.paginate_queryset(itinaries)
         if page is not None:

@@ -4,6 +4,8 @@ from rest_framework import serializers
 
 from record.models import Record, Collector, Action, Enterprise
 
+from itinary.serializers.output_serializer import ItinarySerializer
+
 class CollectorSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -29,13 +31,14 @@ class RecordSerializer(serializers.ModelSerializer):
     action = ActionSerializer(many=False, read_only=True)
     collector = ActionSerializer(many=False, read_only=True)
     enterprise = ActionSerializer(many=False, read_only=True)
-    
-    def get_data(self, obj):
-        return json.loads(obj.data)
+    itinary = ItinarySerializer(many=False, read_only=True)
 
     class Meta:
         model = Record
-        fields = ["id", "data", "action", "collector", "enterprise", "date"]
+        fields = ["id", "data", "action", "collector", "enterprise", "itinary", "date"]
+    
+    def get_data(self, obj):
+        return json.loads(obj.data)
 
 class ActionStatSerializer(serializers.Serializer):
     metric = serializers.CharField(source='action__name')

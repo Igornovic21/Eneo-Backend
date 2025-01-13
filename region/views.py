@@ -40,14 +40,19 @@ class RegionViewSet(ViewSet, PaginationHandlerMixin):
         
     def list(self, request):
         datas = []
-        regions = request.user.region.all()
+        regions = []
+
+        if request.user.is_superuser:
+            regions = Region.objects.all()
+        else:
+            request.user.region.all()
+
         for region in regions:
-            records = Record.objects.only('itinary').filter(itinary__region=region)
             datas.append({
                 "id": region.id,
                 "name": region.name,
                 "ona_name": region.ona_name,
-                "records": len(records)
+                "records": None
             })
             
         serializer = self.serializer_class(datas, many=True)
@@ -92,7 +97,12 @@ class RegionFilterSet(ViewSet, PaginationHandlerMixin):
         #     }, status=status.HTTP_400_BAD_REQUEST)
 
         datas = []
-        regions = request.user.region.all()
+        regions = []
+
+        if request.user.is_superuser:
+            regions = Region.objects.all()
+        else:
+            request.user.region.all()
 
         for region in regions:
             records = Record.objects.only("itinary").filter(itinary__region=region)

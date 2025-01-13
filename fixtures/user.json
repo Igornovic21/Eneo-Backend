@@ -1,18 +1,189 @@
 [
   {
     "model": "user.user",
+    "pk": "0c411e8d-ffca-43a2-a41a-8d2864d6401a",
+    "fields": {
+      "password": "pbkdf2_sha256$870000$KM7oqLlum8fjDmH3ToHmNI$w/oHAvDYCecAVdTrQmsqWoobPKORWEUsdqi1KHckIbo=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-06T15:15:32.487Z",
+      "email": "drnea@eneo.cm",
+      "username": "DRNEA",
+      "profile_picture": "",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": "199f7549-d14d-4f89-aa02-1de45d3f720f",
+    "fields": {
+      "password": "pbkdf2_sha256$870000$ucnoGjIdFkrdzGn1aUGxAu$0hwlQyrTsIOqKPo89DcWHKRtIJXz5HTkPWEmm7w25l4=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-06T15:17:42.606Z",
+      "email": "drsom@eneo.cm",
+      "username": "DRSOM",
+      "profile_picture": "",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": "1bc8d713-fe44-4c35-b347-1d1c75f56513",
+    "fields": {
+      "password": "pbkdf2_sha256$870000$h3h2QNNWU2zr73gD8qy48Y$cxlKHh3CR/sSc2Yqbaief/lzDryohKFAPJ44QQBVHg4=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-06T15:15:09.599Z",
+      "email": "dre@eneo.cm",
+      "username": "DRE",
+      "profile_picture": "",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": "29297340-7c38-4bc4-bd03-f1d46ae4e128",
+    "fields": {
+      "password": "pbkdf2_sha256$870000$hD2AmmUR5YICpountlYWbL$DpHK8jme+/qbiZZ90+ZwDKxA/iqcL3ZbRmv6xExeUrs=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-06T15:13:07.059Z",
+      "email": "drc@eneo.cm",
+      "username": "DRC",
+      "profile_picture": "",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": "35bbf9a9-093f-41d5-a2e0-ce43235441d6",
+    "fields": {
+      "password": "pbkdf2_sha256$870000$xyBEbnw9ayuMf0JXnRfoNi$uj/TzEfXmWmPieewb2SaPnVlUPk2p/HRuFJzcRkZB/c=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-06T15:15:57.351Z",
+      "email": "drono@eneo.cm",
+      "username": "DRONO",
+      "profile_picture": "",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "user.user",
     "pk": "8ab59f47-301d-4405-8c70-82b9c76434a1",
     "fields": {
       "password": "pbkdf2_sha256$870000$bXojzH4npGFwBFNmPPOz4j$kstf70wKSHuPvST5dXCmVPiIDa1P5RaGRSdXdL3Qako=",
-      "last_login": "2024-11-14T10:06:30.750Z",
+      "last_login": "2025-01-06T13:25:12.039Z",
       "is_superuser": true,
       "first_name": "",
-      "last_name": "",
+      "last_name": "superuser",
       "is_staff": true,
       "is_active": true,
-      "date_joined": "2024-11-14T10:06:05.017Z",
+      "date_joined": "2024-11-14T10:06:05Z",
       "email": "superuser@gmail.com",
       "username": "superuser",
+      "profile_picture": "",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": "b2962aed-e168-40f5-9f8a-c67a4c222057",
+    "fields": {
+      "password": "pbkdf2_sha256$870000$Xzk3mbNdqbQOlHBTf6RbOi$ojnbyKRh4/7TO93FIjuFU/UVbj5KHuQDjWUavvrkxz4=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-06T15:17:09.752Z",
+      "email": "drsm@eneo.cm",
+      "username": "DRSM",
+      "profile_picture": "",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": "b2f0c21b-9821-4adc-8032-ab23ad9b32fa",
+    "fields": {
+      "password": "pbkdf2_sha256$870000$LXZVpALQ0ajlWcTNzseNE6$JtG//3aptTYTwIqXQ65jhVlNMbCiq4wMYXUga+XNdOg=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-06T15:14:47.287Z",
+      "email": "drd@eneo.cm",
+      "username": "DRD",
+      "profile_picture": "",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": "d8d79e6d-6a85-4798-a144-a03c530ffffe",
+    "fields": {
+      "password": "pbkdf2_sha256$870000$NTFBu24czSg6ohuwgJC9bp$5u/4EUV+VumNPix07Njxr69fNZBzNioyzbcLRWc8rRM=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-06T15:16:48.578Z",
+      "email": "drsano@eneo.cm",
+      "username": "DRSANO",
+      "profile_picture": "",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": "f24609f9-25ef-471f-8927-87b96e5254ea",
+    "fields": {
+      "password": "pbkdf2_sha256$870000$KpjrChWdDpLFR9m4aoGocc$my4BHB0love8mYPvBIlug3HpbOht0zfFm3bIWqkhFc8=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-06T15:14:16.358Z",
+      "email": "dry@eneo.cm",
+      "username": "DRY",
       "profile_picture": "",
       "groups": [],
       "user_permissions": []

@@ -10,6 +10,7 @@ class Itinary(models.Model):
 
     name = models.CharField(max_length=100)
     block_code = models.CharField(max_length=100, blank=True, null=True)
+    metadata = models.TextField()
     boundary = models.GeometryField(blank=True, null=True, srid=SRID)
     region = models.ForeignKey(Region, on_delete=models.DO_NOTHING, default=None, null=True, blank=True)
 

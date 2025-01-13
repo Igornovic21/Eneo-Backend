@@ -24,6 +24,8 @@ class Command(BaseCommand):
         # itinaries = {}
         for index, feature in enumerate(itinary_data['features']):
             properties = feature["properties"]
+            del properties["path"]
+            del properties["layer"]
             try :
                 key = ""
                 region = properties["REGION"]
@@ -71,6 +73,7 @@ class Command(BaseCommand):
 
                 itinary.region = region
                 itinary.block_code = block_code
+                itinary.metadata = json.dumps(properties)
                 # itinary.boundary = multi_polygon
                 itinary.boundary = geometry
                 itinary.save()
