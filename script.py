@@ -130,7 +130,18 @@ def edit_block_code():
         geo_json_data['features'] = new_itinaries
         json.dump(geo_json_data, file, separators=(",", ":"), indent=None)
 
+import pandas as pd
+def import_odk_xlsx_data():
+    file_path = "dry.xlsx"
+    # DIR = Path(__file__).resolve().parent.parent
+    # file_path = os.path.join(DIR, 'dry.xlsx')
+    # print(file_path)
+    df = pd.read_excel(file_path, sheet_name="Feuil1")
+    print(df)
+
+    for index, row in df.iterrows():
+        print(f"Row {index}: {row.to_dict()}")
 
 if __name__ == "__main__":
-    edit_block_code()
+    import_odk_xlsx_data()
     pass

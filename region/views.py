@@ -48,11 +48,12 @@ class RegionViewSet(ViewSet, PaginationHandlerMixin):
             request.user.region.all()
 
         for region in regions:
+            records = Record.objects.only("itinary").filter(itinary__region=region)
             datas.append({
                 "id": region.id,
                 "name": region.name,
                 "ona_name": region.ona_name,
-                "records": None
+                "records": len(records)
             })
             
         serializer = self.serializer_class(datas, many=True)

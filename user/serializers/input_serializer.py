@@ -12,7 +12,7 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=30)
 
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(max_length=30)
+    # old_password = serializers.CharField(max_length=30)
     new_password = serializers.CharField(max_length=30)
     confirm_password = serializers.CharField(max_length=30)
 

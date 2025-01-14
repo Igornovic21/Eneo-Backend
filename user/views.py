@@ -125,15 +125,15 @@ class AuthViewSet(ViewSet):
             "message": "Données saisies invalides"
         }, status=status.HTTP_401_UNAUTHORIZED)
 
-    @action(detail=False, methods=['post'], name='change-password', url_name='change-password', permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['post'], name='change-password', url_name='change-password', permission_classes=[IsAdminUser])
     def change_password(self, request):
         serializer = self.change_password_serializer(data=request.data)
         if serializer.is_valid():
-            if not check_password(serializer.data['old_password'], request.user.password):
-                logger.warning("Ancien mot de passe incorrect")
-                return Response({
-                    "status": False, 
-                    "message": "Ancien mot de passe incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+            # if not check_password(serializer.data['old_password'], request.user.password):
+            #     logger.warning("Ancien mot de passe incorrect")
+            #     return Response({
+            #         "status": False, 
+            #         "message": "Ancien mot de passe incorrect"}, status=status.HTTP_400_BAD_REQUEST)
 
             if not password_check(serializer.data['new_password']):
                 logger.warning("Votre mot de passe est faible")
