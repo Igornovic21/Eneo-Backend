@@ -124,23 +124,92 @@ def edit_block_code():
         itinary['properties']['BLOCK_CODE'] = itinary['properties']['REGION'] + '-{}{}'.format(suffix, index+1)
         new_itinaries.append(itinary)
 
-        # print(new_itinaries)
-
     with open('NEW_DCUD.geojson', 'w') as file:
         geo_json_data['features'] = new_itinaries
         json.dump(geo_json_data, file, separators=(",", ":"), indent=None)
 
 import pandas as pd
 def import_odk_xlsx_data():
-    file_path = "dry.xlsx"
+    # Define the path to your CSV file
+    csv_file_path = 'dry_2.csv'
+
+    # Open and read the CSV file
+    # try:
+    with open(csv_file_path, mode='r') as file:
+        csv_reader = csv.reader(file)
+        records = []
+        # Print each row
+        for row in csv_reader:
+            try:
+                id = row[0]
+                attachments = {
+                    "id": None,
+                    "name": None,
+                    "xform": None,
+                    "filename": None,
+                    "instance": None,
+                    "mimetype": None,
+                    "download_url": "https://eneoservices.position.cm/static/admin/img/icon-addlink.svg",
+                    "small_download_url": "https://eneoservices.position.cm/static/admin/img/icon-addlink.svg",
+                    "medium_download_url": "https://eneoservices.position.cm/static/admin/img/icon-addlink.svg"
+                }
+                pl = {
+                    "pl/info_pl/status": "actif" if row[7] == "ACTIVE" else "inactif",
+                    "pl/info_pl/activite": row[18],
+                    "pl/info_pl/batiment": row[17],
+                    "pl/info_pl/code_bare": row[12],
+                    "pl/info_pl/photo_index": row[20],
+                    "pl/info_pl/serial_number": row[12],
+                    "pl/info_pl/type_compteur": row[16]
+                }
+                date = row[24]
+                nbr_pl = 1
+                contrat = ""
+                montant = ""
+                collecteur = row[1]
+                geolocation = [float(row[15]), float(row[14])]
+                accesibilite = ""
+                code_anomaly = row[23]
+                matricule_co = row[3]
+                numero_scelle = ""
+                action_coupure = row[21]
+                entreprise_collecteur = ""
+                data = {
+                    "id": id,
+                        "pl": [
+                            pl
+                        ],
+                        "date": date,
+                        "action": action_coupure,
+                        "nbr_pl": nbr_pl,
+                        "contrat": contrat,
+                        "montant": montant,
+                        "Collecteur": collecteur,
+                        "_geolocation": geolocation,
+                        "_attachments": [
+                            attachments
+                        ],
+                        "accesibilite": accesibilite,
+                        "code_anomaly": code_anomaly,
+                        "matricule_co": matricule_co,
+                        "numero_scelle": numero_scelle,
+                        "action_coupure": action_coupure,
+                        "entreprise_collecteur": entreprise_collecteur
+                }
+                records.append(data)
+                print(data)
+            except Exception as e:
+                print(f"Convertion error {e}")
+
+    # file_path = "dry_2.xlsx"
     # DIR = Path(__file__).resolve().parent.parent
     # file_path = os.path.join(DIR, 'dry.xlsx')
     # print(file_path)
-    df = pd.read_excel(file_path, sheet_name="Feuil1")
-    print(df)
+    # df = pd.read_excel(file_path, sheet_name="Sheet1")
+    # print(df)
 
-    for index, row in df.iterrows():
-        print(f"Row {index}: {row.to_dict()}")
+    # for index, row in df.iterrows():
+    #     print(f"Row {index}: {row.to_dict()}")
 
 if __name__ == "__main__":
     import_odk_xlsx_data()

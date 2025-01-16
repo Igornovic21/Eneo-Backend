@@ -67,18 +67,18 @@ class RecordViewSet(ViewSet, PaginationHandlerMixin):
         else:
             serializer = self.serializer_class(records, many=True)
 
-        action_stats = records.values("action__name").annotate(total=Count("action"))
-        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
-        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
-        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
+        # action_stats = records.values("action__name").annotate(total=Count("action"))
+        # enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
+        # serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
+        # serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
         logger.warning("Records stats loaded")
         return Response({
             "status": True,
             "message": "Records stats loaded",
-            "statistics": {
-                "action": serializer_action_stats.data,
-                "enterprise": serializer_enterprise_stats.data,
-            },
+            # "statistics": {
+            #     "action": serializer_action_stats.data,
+            #     "enterprise": serializer_enterprise_stats.data,
+            # },
             "detail": serializer.data
         }, status=status.HTTP_200_OK)
 
@@ -151,12 +151,12 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
             date = datetime.strptime(max_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
 
-        action_stats = records.values("action__name").annotate(total=Count("action"))
-        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
-        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
-        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
+        # action_stats = records.values("action__name").annotate(total=Count("action"))
+        # enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
+        # serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
+        # serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
 
-        active_records = records.only("data").filter(data__icontains='"pl/info_pl/status": "actif"')
+        # active_records = records.only("data").filter(data__icontains='"pl/info_pl/status": "actif"')
 
         page = self.paginate_queryset(records)
         if page is not None:
@@ -167,11 +167,11 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
         return Response({
             "status": True,
             "message": "Filtered records stats loaded",
-            "percentage": round(len(active_records) / len(records), 2) * 100,
-            "statistics": {
-                "action": serializer_action_stats.data,
-                "enterprise": serializer_enterprise_stats.data,
-            },
+            # "percentage": round(len(active_records) / len(records), 2) * 100,
+            # "statistics": {
+            #     "action": serializer_action_stats.data,
+            #     "enterprise": serializer_enterprise_stats.data,
+            # },
             "detail": serializer.data
         }, status=status.HTTP_200_OK)
     
@@ -188,15 +188,14 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
                 "message": "Provide serial_number required params",
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        records = Record.objects.only("itinary").filter(itinary__region__in=request.user.region.all())
+        records = Record.objects.only("data").filter(data__contains='"pl/info_pl/serial_number": "{}"'.format(serial_number)).order_by("-date")
+        
         if min_date is not None:
             date = datetime.strptime(min_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC))
         if max_date is not None:
             date = datetime.strptime(max_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
-            
-        records = records.only("data").filter(data__icontains='"pl/info_pl/serial_number": "{}"'.format(serial_number)).order_by("-date")
 
         page = self.paginate_queryset(records)
         if page is not None:

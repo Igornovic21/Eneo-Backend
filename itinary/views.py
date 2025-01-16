@@ -87,18 +87,18 @@ class ItinaryViewSet(ViewSet, PaginationHandlerMixin):
         else:
             serializer = self.serializer_class(records, many=True)
 
-        action_stats = records.values("action__name").annotate(total=Count("action"))
-        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
-        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
-        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
+        # action_stats = records.values("action__name").annotate(total=Count("action"))
+        # enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
+        # serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
+        # serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
         logger.warning("Itinary stats loaded")
         return Response({
             "status": True,
             "message": "Itinary stats loaded",
-            "statistics": {
-                "action": serializer_action_stats.data,
-                "enterprise": serializer_enterprise_stats.data,
-            },
+            # "statistics": {
+            #     "action": serializer_action_stats.data,
+            #     "enterprise": serializer_enterprise_stats.data,
+            # },
             "detail": serializer.data
         }, status=status.HTTP_200_OK)
 
@@ -190,10 +190,10 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
             date = datetime.strptime(max_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
 
-        action_stats = records.values("action__name").annotate(total=Count("action"))
-        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
-        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
-        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
+        # action_stats = records.values("action__name").annotate(total=Count("action"))
+        # enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
+        # serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
+        # serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
 
         page = self.paginate_queryset(records)
         if page is not None:
@@ -204,10 +204,10 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
         return Response({
             "status": True,
             "message": "Filtered itinary stats loaded",
-            "statistics": {
-                "action": serializer_action_stats.data,
-                "enterprise": serializer_enterprise_stats.data,
-            },
+            # "statistics": {
+            #     "action": serializer_action_stats.data,
+            #     "enterprise": serializer_enterprise_stats.data,
+            # },
             "detail": serializer.data
         }, status=status.HTTP_200_OK)
     
@@ -255,10 +255,10 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
             date = datetime.strptime(max_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
 
-        action_stats = records.values("action__name").annotate(total=Count("action"))
-        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
-        serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
-        serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
+        # action_stats = records.values("action__name").annotate(total=Count("action"))
+        # enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
+        # serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
+        # serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
 
         page = self.paginate_queryset(records)
         if page is not None:
@@ -270,9 +270,9 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
         return Response({
             "status": True,
             "message": "Pl records stats loaded",
-            "statistics": {
-                "action": serializer_action_stats.data,
-                "enterprise": serializer_enterprise_stats.data,
-            },
+            # "statistics": {
+            #     "action": serializer_action_stats.data,
+            #     "enterprise": serializer_enterprise_stats.data,
+            # },
             "detail": serializer.data
         }, status=status.HTTP_200_OK)

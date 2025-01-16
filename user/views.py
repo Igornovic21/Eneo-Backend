@@ -48,6 +48,18 @@ class AuthViewSet(ViewSet):
             }
             logger.warning("Ce compte n'existe pas")
             return Response(data, status=status.HTTP_404_NOT_FOUND)
+    
+    def get_object_pk(self, pk:str):
+        try:
+            account = User.objects.get(pk=pk)
+            return account
+        except User.DoesNotExist:
+            data = {
+                "status": False,
+                "message": "Ce compte n'existe pas"
+            }
+            logger.warning("Ce compte n'existe pas")
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
 
     def list(self, request):
         return Response({"message": "This is the auth base url"}, status=status.HTTP_200_OK)
@@ -74,11 +86,16 @@ class AuthViewSet(ViewSet):
 
             if user_serializer.is_valid():
                 password = make_password(serializer.data["password"])
-                user_serializer.save(password=password)
+                email = user_serializer.save(password=password)
+
+                account = self.get_object(email)
+                if type(account) is Response : return account
+
                 logger.info("Compte crée avec succès")
                 return Response({
                     "status": True,
-                    "message": "Compte crée avec succès"
+                    "message": "Compte crée avec succès",
+                    "detail": { "id": account.pk }
                 }, status=status.HTTP_200_OK)
             logger.warning("Ces informations ont déjà été utilisées")
             return Response({
@@ -187,15 +204,8 @@ class AuthViewSet(ViewSet):
     @action(detail=False, methods=['put'], name='region', url_name='region', permission_classes=[IsAdminUser])
     def region(self, request):
         data = request.data
-        print(data)
-        try:
-            user = User.objects.get(id=data["user"])
-        except Exception as e:
-            logger.error("User not found")
-            return Response({
-                "status": True,
-                "message": "User not found",
-            }, status=status.HTTP_404_NOT_FOUND)
+        user = self.get_object_pk(data["user"])
+        if type(user) is Response : return user
 
         user.region.clear()
         user.save()
@@ -269,7 +279,8 @@ class AuthViewSet(ViewSet):
 
     @action(detail=False, methods=['put'], name='modify', url_name='modify', permission_classes=[IsAuthenticated])
     def modify(self, request):
-        account = self.get_object(request.user.email)
+        data = request.data
+        account = self.get_object_pk(data["user"])
         if type(account) is Response : return account
 
         serializer = self.serializer_class(account, data=request.data, partial=True)

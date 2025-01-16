@@ -65,7 +65,6 @@ class Command(BaseCommand):
                             result[field] = None
                     
                     record.data = json.dumps(result)
-                    record.full_data = json.dumps(data)
                     record.action = action
                     record.collector = collector
                     record.enterprise = enterprise

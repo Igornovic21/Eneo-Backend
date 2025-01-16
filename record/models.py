@@ -78,14 +78,13 @@ class Enterprise(models.Model):
 class Record(models.Model):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
 
-    itinary = models.ForeignKey(Itinary, on_delete=models.DO_NOTHING, default=None, null=True, blank=True, related_name="records")
-    ona_id = models.CharField(max_length=100, editable=False, unique=True)
-    data = models.TextField()
-    full_data = models.TextField()
-    action = models.ForeignKey(Action, on_delete=models.DO_NOTHING, null=True, blank=True)
-    collector = models.ForeignKey(Collector, on_delete=models.DO_NOTHING, null=True, blank=True)
-    enterprise = models.ForeignKey(Enterprise, on_delete=models.DO_NOTHING, null=True, blank=True)
-    date = models.DateTimeField(default=timezone.now)
+    itinary = models.ForeignKey(Itinary, on_delete=models.DO_NOTHING, default=None, null=True, blank=True, related_name="records", db_index=True)
+    ona_id = models.CharField(max_length=100, editable=False, unique=True, db_index=True)
+    data = models.TextField(db_index=True)
+    action = models.ForeignKey(Action, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True)
+    collector = models.ForeignKey(Collector, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True)
+    enterprise = models.ForeignKey(Enterprise, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True)
+    date = models.DateTimeField(default=timezone.now, db_index=True)
 
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
@@ -103,5 +102,6 @@ class Record(models.Model):
             models.Index(fields=['action']),
             models.Index(fields=['collector']),
             models.Index(fields=['enterprise']),
+            models.Index(fields=['data']),
             models.Index(fields=['date']),
         ]
