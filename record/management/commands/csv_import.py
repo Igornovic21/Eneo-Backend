@@ -83,17 +83,7 @@ class Command(BaseCommand):
                         "entreprise_collecteur": entreprise_collecteur
                     }
 
-                    try:
-                        # latitude = data["_geolocation"][0]
-                        # longitude = data["_geolocation"][1]
-                        # print(latitude, longitude)
-                        # point = Point(longitude, latitude, srid=SRID)
-                        # itinaries = Itinary.objects.only("boundary").filter(boundary__contains=point)
-                        # if itinaries.exists():
-                        #     print(itinaries)
-                        # else:
-                        #     self.stdout.write("No itinary found for this submission")
-                        
+                    try:                        
                         ona_id = data["id"]
 
                         record, _ = Record.objects.get_or_create(ona_id=ona_id)
