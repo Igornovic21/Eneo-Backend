@@ -45,7 +45,7 @@ class RegionViewSet(ViewSet, PaginationHandlerMixin):
         if request.user.is_superuser:
             regions = Region.objects.all()
         else:
-            request.user.region.all()
+            regions = request.user.region.all()
 
         for region in regions:
             records = Record.objects.only("itinary").filter(itinary__region=region)
@@ -103,7 +103,7 @@ class RegionFilterSet(ViewSet, PaginationHandlerMixin):
         if request.user.is_superuser:
             regions = Region.objects.all()
         else:
-            request.user.region.all()
+            regions = request.user.region.all()
 
         for region in regions:
             records = Record.objects.only("itinary").filter(itinary__region=region)

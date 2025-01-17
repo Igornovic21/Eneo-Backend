@@ -164,11 +164,14 @@ class AuthViewSet(ViewSet):
                     "status": False,
                     "message": "Les mots de passe ne correspondent pas"}, status=status.HTTP_400_BAD_REQUEST)
 
-            user = self.get_object(request.user.email)
+            data = request.data
+            user = self.get_object_pk(data["user"])
             if type(user) is Response : return user
+            # user = self.get_object(request.user.email)
+            # if type(user) is Response : return user
             
             user.set_password(serializer.data["new_password"])
-            token, s = Token.objects.get_or_create(user=request.user)
+            token, s = Token.objects.get_or_create(user=user)
             token.delete()
             user.save()
             logger.info("Mot de passe changé avec succès")
@@ -287,6 +290,8 @@ class AuthViewSet(ViewSet):
 
         if serializer.is_valid():
             serializer.save()
+            account.username = data["email"]
+            account.save()
             logger.info("Vos informations ont été mises à jour")
             return Response({
                 "status": True,
