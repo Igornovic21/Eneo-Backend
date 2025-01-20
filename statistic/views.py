@@ -21,8 +21,8 @@ from utils.pagination import PaginationHandlerMixin
 from region.models import Region
 from record.models import Record
 from itinary.models import Itinary
-# Create your views here.
 
+# Create your views here.
 @authentication_classes([ExpiringTokenAuthentication])
 class StatFilterSet(ViewSet, PaginationHandlerMixin):
     action_stat_serializer_class = ActionStatSerializer
@@ -30,9 +30,9 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
     collector_stat_serializer_class = CollectorStatSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_itinary_object(self, pk:str):
+    def get_itinary_object(self, block_code:str):
         try:
-            return Itinary.objects.get(pk=pk)
+            return Itinary.objects.get(block_code=block_code)
         except Itinary.DoesNotExist:
             data = {
                 "status": False,
@@ -70,7 +70,7 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
             if type(region) is Response : return region
             records = Record.objects.only("itinary").filter(itinary__region=region)
         elif itinary_id is not None:
-            itinary = self.get_itinary_object(pk=itinary_id)
+            itinary = self.get_itinary_object(block_code=itinary_id)
             if type(itinary) is Response : return itinary
             records = Record.objects.only("itinary").filter(itinary=itinary)
 

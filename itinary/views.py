@@ -35,9 +35,9 @@ class ItinaryViewSet(ViewSet, PaginationHandlerMixin):
     enterprise_stat_serializer_class = EnterpriseStatSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk:str):
+    def get_object(self, block_code:str):
         try:
-            return Itinary.objects.get(pk=pk)
+            return Itinary.objects.get(block_code=block_code)
         except Itinary.DoesNotExist:
             data = {
                 "status": False,
@@ -78,7 +78,7 @@ class ItinaryViewSet(ViewSet, PaginationHandlerMixin):
         }, status=status.HTTP_200_OK)
 
     def retrieve(self, request, pk=None):
-        itinary = self.get_object(pk=pk)
+        itinary = self.get_object(block_code=pk)
         if type(itinary) is Response : return itinary
 
         records = Record.objects.only('itinary').filter(itinary=itinary)
@@ -113,9 +113,9 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
     enterprise_stat_serializer_class = EnterpriseStatSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk:str):
+    def get_object(self, block_code:str):
         try:
-            return Itinary.objects.get(pk=pk)
+            return Itinary.objects.get(block_code=block_code)
         except Itinary.DoesNotExist:
             data = {
                 "status": False,
@@ -155,7 +155,7 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
         }, status=status.HTTP_200_OK)
 
     def retrieve(self, request, pk=None):
-        itinary = self.get_object(pk=pk)
+        itinary = self.get_object(block_code=pk)
         if type(itinary) is Response : return itinary
         if itinary.region not in request.user.region.all():
             return Response({
