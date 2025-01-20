@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'itinary',
     'config',
     'record',
+    'statistic'
 ]
 
 MIDDLEWARE = [

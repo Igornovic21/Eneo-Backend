@@ -56,17 +56,17 @@ class RecordConfig(AppConfig):
             #     replace_existing=True,
             # )
 
-            logger.info("Starting scheduler...")
-            scheduler.start()
-            logger.info("Starting started")
+            # logger.info("Starting scheduler...")
+            # scheduler.start()
+            # logger.info("Starting started")
             
-            try:
-                logger.info("Starting scheduler...")
-                scheduler.start()
-                logger.info("Starting started")
-            except Exception as e:
-                print(e)
-                logger.info("Stopping scheduler...")
-                scheduler.shutdown()
-                logger.info("Scheduler shut down successfully!")
+            # try:
+            #     logger.info("Starting scheduler...")
+            #     scheduler.start()
+            #     logger.info("Starting started")
+            # except Exception as e:
+            #     print(e)
+            #     logger.info("Stopping scheduler...")
+            #     scheduler.shutdown()
+            #     logger.info("Scheduler shut down successfully!")
         return super().ready()

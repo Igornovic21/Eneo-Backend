@@ -189,7 +189,7 @@ class AuthViewSet(ViewSet):
     @action(detail=False, methods=['get'], name='user', url_name='user', permission_classes=[IsAdminUser])
     def user(self, request):
         users_data = []
-        users = User.objects.exclude(is_superuser=True)
+        users = User.objects.all()
 
         for user in users:
             user_serializer = self.serializer_class(user, many=False)

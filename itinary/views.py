@@ -14,7 +14,8 @@ from rest_framework.permissions import IsAuthenticated
 from authorization.authentication import ExpiringTokenAuthentication
 
 from constants.config import DATETIME_FORMAT
-from record.serializers.output_serializer import RecordSerializer, ActionStatSerializer, EnterpriseStatSerializer
+from record.serializers.output_serializer import RecordSerializer
+from statistic.serializers.output_serializer import ActionStatSerializer, EnterpriseStatSerializer
 from itinary.serializers.output_serializer import ItinarySerializer
 
 from region.constants import SRID

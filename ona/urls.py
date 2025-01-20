@@ -22,6 +22,7 @@ from region.views import RegionViewSet, RegionFilterSet
 from record.views import RecordViewSet, RecordFilterSet
 from itinary.views import ItinaryViewSet, ItinaryFilterSet
 from config.views import ConfigViewSet
+from statistic.views import StatFilterSet
 
 from rest_framework import routers
 
@@ -35,6 +36,7 @@ routers.register('itinary', ItinaryViewSet, basename='itinary')
 routers.register('region-filter', RegionFilterSet, basename='region-filter')
 routers.register('record-filter', RecordFilterSet, basename='record-filter')
 routers.register('itinary-filter', ItinaryFilterSet, basename='itinary-filter')
+routers.register('stat-filter', StatFilterSet, basename='stat-filter')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
