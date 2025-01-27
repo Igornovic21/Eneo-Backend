@@ -20,7 +20,7 @@ class Command(BaseCommand):
         parser.add_argument('--verbose', action='store_true', help='Enable verbose mode')
 
     def handle(self, *args, **kwargs):
-        with open(os.path.join(settings.BASE_DIR, 'fixtures/dry.csv'), mode='r') as file:
+        with open(os.path.join(settings.BASE_DIR, 'fixtures/drd_odk.csv'), mode='r') as file:
             csv_reader = csv.reader(file)
             
             index = 1
@@ -61,7 +61,7 @@ class Command(BaseCommand):
                     action_coupure = row[21]
                     entreprise_collecteur = ""
                     data = {
-                        "id": id,
+                        "id": "drd-odk" + id,
                         "pl": [
                             pl
                         ],

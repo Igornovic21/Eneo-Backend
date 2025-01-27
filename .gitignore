@@ -166,3 +166,4 @@ staticfiles/
 itineraire.geojson
 *.csv
 *.xlsx
+*.geojson

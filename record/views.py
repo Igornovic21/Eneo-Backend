@@ -189,7 +189,9 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
                 "message": "Provide serial_number required params",
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        records = Record.objects.only("data").filter(data__contains='"pl/info_pl/serial_number": "{}"'.format(serial_number)).order_by("-date")
+        print(request.user.region.all())
+        
+        records = Record.objects.only("data").filter(data__contains='"pl/info_pl/serial_number": "{}"'.format(serial_number), itinary__region__in=request.user.region.all()).order_by("-date")
         
         if min_date is not None:
             date = datetime.strptime(min_date, DATETIME_FORMAT)

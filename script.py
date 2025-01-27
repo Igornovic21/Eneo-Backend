@@ -1,4 +1,4 @@
-import json, csv
+import json, csv, requests
 
 def gen_geo_points():
     # Load OSM JSON data
@@ -128,7 +128,6 @@ def edit_block_code():
         geo_json_data['features'] = new_itinaries
         json.dump(geo_json_data, file, separators=(",", ":"), indent=None)
 
-import pandas as pd
 def import_odk_xlsx_data():
     # Define the path to your CSV file
     csv_file_path = 'dry_2.csv'
@@ -211,6 +210,37 @@ def import_odk_xlsx_data():
     # for index, row in df.iterrows():
     #     print(f"Row {index}: {row.to_dict()}")
 
+
+BANOC_URL="https://dev.api.banoc.coeurduweb.com/api/geocode/coordinates?latitude={}&longitude={}&level=155"
+
+def add_code_banoc_soa():
+    file_name = 'PROPRIETAIRE NB.geojson'
+    # Load GEO JSON data
+    with open(file_name, 'r', encoding='utf-8') as file:
+        geo_json_data = json.load(file)
+
+    itinaries = geo_json_data['features']
+
+    new_features = []
+    for element in itinaries:
+        lattitude = element["properties"]["Y"]
+        longitude = element["properties"]["X"]
+        try:
+            response = requests.get(BANOC_URL.format(lattitude, longitude))
+            if response.status_code == 200:
+                data = response.json()
+                print(data["data"][0]["code_b32nvu"])
+                element["properties"]["BANOC_CODE"] = data["data"][0]["code_b32nvu"]
+            else:
+                element["properties"]["BANOC_CODE"] = "Unknown"
+            new_features.append(element)
+        except Exception as e:
+            print(e)
+
+    with open('NEW_{}'.format(file_name), 'w') as file:
+        geo_json_data['features'] = new_features
+        json.dump(geo_json_data, file, separators=(",", ":"), indent=None)
+
 if __name__ == "__main__":
-    import_odk_xlsx_data()
-    pass
+    add_code_banoc_soa()
+    # pass

@@ -224,6 +224,22 @@ class AuthViewSet(ViewSet):
             "message": "Regions assigned to the user successfully",
         }, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['put'], name='admin', url_name='admin', permission_classes=[IsAdminUser])
+    def admin(self, request):
+        data = request.data
+        user = self.get_object_pk(data["user"])
+        if type(user) is Response : return user
+
+        user.is_staff = True
+        user.is_superuser = True
+        user.save()
+
+        logger.info("User status changed to admin successfully")
+        return Response({
+            "status": True,
+            "message": "User status changed to admin successfully",
+        }, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['get'], name='info', url_name='info', permission_classes=[IsAuthenticated])
     def info(self, request):
         account = self.get_object(request.user.email)
