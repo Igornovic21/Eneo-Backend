@@ -230,14 +230,23 @@ class AuthViewSet(ViewSet):
         user = self.get_object_pk(data["user"])
         if type(user) is Response : return user
 
-        user.is_staff = True
-        user.is_superuser = True
+        if user.is_superuser:
+            user.is_staff = False
+            user.is_superuser = False
+        else:
+            user.is_staff = True
+            user.is_superuser = True
         user.save()
+        
+        user_serializer = self.serializer_class(user, many=False)
+        data = user_serializer.data
+        data["regions"] = self.region_serializer(user.region.all(), many=True).data
 
         logger.info("User status changed to admin successfully")
         return Response({
             "status": True,
             "message": "User status changed to admin successfully",
+            "detail": data
         }, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], name='info', url_name='info', permission_classes=[IsAuthenticated])
