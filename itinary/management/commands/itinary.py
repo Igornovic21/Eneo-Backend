@@ -65,11 +65,10 @@ class Command(BaseCommand):
                 region, _ = Region.objects.get_or_create(name=region)
                 itinaries = Itinary.objects.only("name").filter(name__icontains=key)
 
-                # if itinaries.exists():
-                #     itinary = Itinary.objects.create(name=key + " - {}".format(len(itinaries) + 1))
-                # else:
-                #     itinary = Itinary.objects.create(name=key)
-                itinary = Itinary.objects.create(name=key)
+                if itinaries.exists():
+                    itinary = itinaries[0]
+                else:
+                    itinary = Itinary.objects.create(name=key)
 
                 itinary.region = region
                 itinary.block_code = block_code

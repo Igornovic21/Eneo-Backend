@@ -6,7 +6,8 @@ services:
     container_name: eneo-db
     restart: always
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - ./database:/var/lib/postgresql/data/
+      # - postgres_data:/var/lib/postgresql/data/
     env_file:
       - ./.docker/.env.db
     healthcheck:
@@ -32,7 +33,7 @@ services:
     container_name: eneo-backend
     # command: ["./.docker/wait-for-it.sh", "db:5000", "--", "python", "manage.py", "runserver", "0.0.0.0:8000"]
     # command: ["./.docker/wait-for-it.sh db:${POSTGRES_PORT} -- python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
-    # command: python manage.py runserver 0.0.0.0:8000
+    # command: python manage.py itinary && python manage.py ona_import
     volumes:
       - ./:/usr/src/app/
     ports:
@@ -42,5 +43,5 @@ services:
     depends_on:
       - eneo-db
 
-volumes:
-  postgres_data:
+# volumes:
+#   postgres_data:

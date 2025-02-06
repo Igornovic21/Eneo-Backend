@@ -1,14 +1,11 @@
 import csv, os, json
 
 from datetime import datetime
+from django.utils import timezone
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
 
-from constants.config import ONA_PROJECT
-from constants.ona_api import ONA_DATA_URL, ONA_PROJECT_URL
-
-from config.models import Credential
 from record.models import Record, Collector, Action, Enterprise
 from itinary.models import Itinary
 from region.constants import SRID
@@ -20,7 +17,7 @@ class Command(BaseCommand):
         parser.add_argument('--verbose', action='store_true', help='Enable verbose mode')
 
     def handle(self, *args, **kwargs):
-        with open(os.path.join(settings.BASE_DIR, 'fixtures/drd_odk.csv'), mode='r') as file:
+        with open(os.path.join(settings.BASE_DIR, 'fixtures/drc_odk.csv'), mode='r', encoding='utf-8') as file:
             csv_reader = csv.reader(file)
             
             index = 1
@@ -35,33 +32,33 @@ class Command(BaseCommand):
                         "filename": None,
                         "instance": None,
                         "mimetype": None,
-                        "download_url": "https://eneoservices.position.cm/static/admin/img/icon-addlink.svg",
-                        "small_download_url": "https://eneoservices.position.cm/static/admin/img/icon-addlink.svg",
-                        "medium_download_url": "https://eneoservices.position.cm/static/admin/img/icon-addlink.svg"
+                        "download_url": row[53],
+                        "small_download_url": row[53],
+                        "medium_download_url": row[53]
                     }
                     pl = {
-                        "pl/info_pl/status": "actif" if row[7] == "ACTIVE" else "inactif",
-                        "pl/info_pl/activite": row[18],
-                        "pl/info_pl/batiment": row[17],
-                        "pl/info_pl/code_bare": row[12],
-                        "pl/info_pl/photo_index": row[20],
-                        "pl/info_pl/serial_number": row[12],
-                        "pl/info_pl/type_compteur": row[16]
+                        "pl/info_pl/status": row[47],
+                        "pl/info_pl/activite": row[50],
+                        "pl/info_pl/batiment": row[49],
+                        "pl/info_pl/code_bare": row[45],
+                        "pl/info_pl/photo_index": row[52],
+                        "pl/info_pl/serial_number": row[51],
+                        "pl/info_pl/type_compteur": row[48]
                     }
-                    date = row[24]
+                    date = row[18]
                     nbr_pl = 1
-                    contrat = ""
-                    montant = ""
-                    collecteur = row[1]
-                    geolocation = [float(row[14]), float(row[15])]
-                    accesibilite = ""
-                    code_anomaly = row[23]
-                    matricule_co = row[3]
-                    numero_scelle = ""
-                    action_coupure = row[21]
-                    entreprise_collecteur = ""
+                    contrat = row[32]
+                    montant = row[38]
+                    collecteur = row[19]
+                    geolocation = [float(row[24]), float(row[25])]
+                    accesibilite = row[22]
+                    code_anomaly = row[30]
+                    matricule_co = row[21]
+                    numero_scelle = row[39]
+                    action_coupure = row[40]
+                    entreprise_collecteur = row[20]
                     data = {
-                        "id": "drd-odk" + id,
+                        "id": "drc-odk-" + str(id),
                         "pl": [
                             pl
                         ],
@@ -83,35 +80,33 @@ class Command(BaseCommand):
                         "entreprise_collecteur": entreprise_collecteur
                     }
 
-                    try:                        
+                    try:
                         ona_id = data["id"]
-
-                        record, _ = Record.objects.get_or_create(ona_id=ona_id)
-
-                        if not _:
-                            self.stdout.write(self.style.WARNING("Record {} already saved".format(ona_id)))
-                        
-                        action, _ = Action.objects.get_or_create(name=data["action"])
-                        collector, _ = Collector.objects.get_or_create(name=data["Collecteur"])
-                        enterprise, _ = Enterprise.objects.get_or_create(name=data["entreprise_collecteur"])
-                        date = datetime.fromisoformat(data["date"])
                         latitude = data["_geolocation"][0]
                         longitude = data["_geolocation"][1]
-                        
-                        record.data = json.dumps(data)
-                        record.action = action
-                        record.collector = collector
-                        record.enterprise = enterprise
-                        record.date = date
                         point = Point(longitude, latitude, srid=SRID)
                         itinaries = Itinary.objects.only("boundary").filter(boundary__contains=point)
                         if itinaries.exists():
+                            record, _ = Record.objects.get_or_create(ona_id=ona_id)
+                            if not _:
+                                self.stdout.write(self.style.WARNING("Record {} already saved".format(ona_id)))
+                            action, _ = Action.objects.get_or_create(name=data["action"])
+                            collector, _ = Collector.objects.get_or_create(name=data["Collecteur"])
+                            enterprise, _ = Enterprise.objects.get_or_create(name=data["entreprise_collecteur"])
+                            date = datetime.strptime(data["date"], "%m/%d/%Y %H:%M")
+                            date = timezone.make_aware(date, timezone.get_current_timezone())
+                            record.data = json.dumps(data)
+                            record.action = action
+                            record.collector = collector
+                            record.enterprise = enterprise
+                            record.date = date
                             record.itinary = itinaries[0]
                             record.save()
                         else:
-                            self.stdout.write("No itinary found for this submission {}".format(ona_id))
-                    except:
+                            self.stdout.write("No itinary found for this submission {}".format(ona_id))         
+                        
+                    except Exception as e:
                         self.stdout.write(self.style.ERROR("Error during single reord process"))
-                except:
+                except Exception as e:
                     self.stdout.write(self.style.ERROR("Error during single reord process"))
             self.stdout.write(self.style.SUCCESS("All data loaded for form dry.xlsx"))

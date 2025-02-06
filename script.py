@@ -242,5 +242,8 @@ def add_code_banoc_soa():
         json.dump(geo_json_data, file, separators=(",", ":"), indent=None)
 
 if __name__ == "__main__":
-    add_code_banoc_soa()
+    text = "Démantelé"
+    fixed_text = text.encode('latin1').decode('utf-8')
+    print(fixed_text)
+    # add_code_banoc_soa()
     # pass
