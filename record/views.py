@@ -125,6 +125,7 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
             }, status=status.HTTP_403_FORBIDDEN)
 
         action = request.GET.get("action", None)
+        agency = request.GET.get("agency", None)
         collector = request.GET.get("collector", None)
         enterprise = request.GET.get("enterprise", None)
         min_date = request.GET.get("min_date", None)
@@ -141,6 +142,8 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
         
         if action is not None:
             records = records.only("action").filter(action__in=action.split(";"))
+        if agency is not None:
+            records = records.only("itinary").filter(itinary__metadata__icontains='"AGENCE": "{}"'.format(agency))
         if collector is not None:
             records = records.only("collector").filter(collector__in=collector.split(";"))
         if enterprise is not None:

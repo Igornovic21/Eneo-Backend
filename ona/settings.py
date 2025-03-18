@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 if os.name == 'nt':
     import platform
     OSGEO4W = r"C:\OSGeo4W"
-    GDAL_LIBRARY_PATH = r"C:\OSGeo4W\bin\gdal309.dll"
+    GDAL_LIBRARY_PATH = r"C:\OSGeo4W\bin\gdal310.dll"
     # if '64' in platform.architecture()[0]:
     #     OSGEO4W += "64"
     assert os.path.isdir(OSGEO4W), "Directory does not exist: " + OSGEO4W
@@ -32,8 +32,8 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get("DATA_UPLOAD_MAX_MEMORY_SIZE"))
-DATA_UPLOAD_MAX_NUMBER_FIELDS = int(os.environ.get("DATA_UPLOAD_MAX_NUMBER_FIELDS"))
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get("DATA_UPLOAD_MAX_MEMORY_SIZE", 104857600))
+DATA_UPLOAD_MAX_NUMBER_FIELDS = int(os.environ.get("DATA_UPLOAD_MAX_NUMBER_FIELDS", 10000000))
 
 
 # Quick-start development settings - unsuitable for production
@@ -112,12 +112,12 @@ WSGI_APPLICATION = 'ona.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': os.environ.get('POSTGRES_DB', 'ona-db'),
+        'NAME': os.environ.get('POSTGRES_DB', 'eneo-db'),
         'USER': os.environ.get('POSTGRES_USER', 'postgres'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'root'),
         'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
-        # 'PORT': os.environ.get('POSTGRES_PORT', 5432),
-        'PORT': None,
+        'PORT': os.environ.get('POSTGRES_PORT', 5432),
+        # 'PORT': None,
     }
 }
 
@@ -211,8 +211,8 @@ TOKEN_EXPIRED_AFTER_SECONDS = 86400
 TOKEN_EXPIRE_TIME = datetime.timedelta(seconds=TOKEN_EXPIRED_AFTER_SECONDS)
 
 # Apscheduler configurations
-APSCHEDULER_DATETIME_FORMAT = os.environ.get("APSCHEDULER_DATETIME_FORMAT")
-APSCHEDULER_RUN_NOW_TIMEOUT = int(os.environ.get("APSCHEDULER_RUN_NOW_TIMEOUT"))
+APSCHEDULER_DATETIME_FORMAT = os.environ.get("APSCHEDULER_DATETIME_FORMAT", "N j, Y, f:s a")
+APSCHEDULER_RUN_NOW_TIMEOUT = int(os.environ.get("APSCHEDULER_RUN_NOW_TIMEOUT", 25))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

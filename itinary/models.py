@@ -25,5 +25,6 @@ class Itinary(models.Model):
         indexes = [
             models.Index(fields=['name']),
             models.Index(fields=['region']),
+            models.Index(fields=['metadata']),
             models.Index(fields=['boundary']),
         ]
