@@ -315,8 +315,6 @@ class AuthViewSet(ViewSet):
 
         if serializer.is_valid():
             serializer.save()
-            account.username = data["email"]
-            account.save()
             logger.info("Vos informations ont été mises à jour")
             return Response({
                 "status": True,
