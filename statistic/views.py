@@ -59,7 +59,7 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
 
         records = []
 
-        if region_id is None and itinary_id is None:
+        if region_id is None and itinary_id is None and agency is None:
             logger.error("Provide at least one filter params (region, itinary)")
             return Response({
                 "status": False,
@@ -76,8 +76,6 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
             records = Record.objects.only("itinary").filter(itinary=itinary)
         elif agency is not None:
             records = Record.objects.only("itinary").filter(itinary__metadata__icontains='"AGENCE": "{}"'.format(agency))
-        else:
-            records = []
 
         action = request.GET.get("action", None)
         collector = request.GET.get("collector", None)
