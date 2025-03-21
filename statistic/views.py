@@ -1,5 +1,5 @@
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.utils.timezone import make_aware
 from django.db.models import Count
 
@@ -234,20 +234,36 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
             records = Record.objects.filter(itinary__region__in=regions)
 
         for region in regions:
-            print(date)
-            records_dtd = records.filter(itinary__region=region, date__gte=make_aware(date, timezone=pytz.UTC))
-            # records_ytd = records.filter(itinary__region=region, date__gte=make_aware(first_day, timezone=pytz.UTC), date__lte=make_aware(date, timezone=pytz.UTC))
+            min = make_aware(date, timezone=pytz.UTC) - timedelta(days=1)
+            max = make_aware(date, timezone=pytz.UTC) + timedelta(days=1)
+            records_dtd = records.only("itinary").filter(itinary__region=region, date__range=(min, max))
+            min = make_aware(first_day, timezone=pytz.UTC) - timedelta(days=1)
+            records_ytd = records.only("itinary").filter(itinary__region=region, date__range=(min, max))
             dtd_stats = records_dtd.values("action__name").annotate(total=Count("action"))
-            # ytd_stats = records_ytd.values("action__name").annotate(total=Count("action"))
+            ytd_stats = records_ytd.values("action__name").annotate(total=Count("action"))
+            dtd_totals = 0
+            ytd_totals = 0
+            for stat in dtd_stats:
+                dtd_totals += stat["total"]
+            for stat in ytd_stats:
+                ytd_totals += stat["total"]
+            # region_records = records.only("itinary").filter(itinary__region=region)
+            # active_records = region_records.only("data").filter(data__icontains='"pl/info_pl/status": "actif"')
             datas.append({
                 "region": region.name,
-                "ytd": dtd_stats,
-                # "dyd": ytd_stats
+                "dtd": dtd_stats,
+                "ytd": ytd_stats,
+                "totals": {
+                    "dtd": dtd_totals,
+                    "ytd": ytd_totals
+                },
+                # "customers": active_records.count(),
+                # "active": 0 if len(region_records) == 0 else round(len(active_records) / len(region_records), 2) * 100,
             })
 
-        logger.warning("Ranking stats loaded")
+        logger.warning("YTD - DTD datas loaded")
         return Response({
             "status": True,
-            "message": "Ranking stats loaded",
+            "message": "YTD - DTD datas loaded",
             "detail": datas
         }, status=status.HTTP_200_OK)
