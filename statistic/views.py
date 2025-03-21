@@ -55,7 +55,7 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
     def list(self, request):
         region_id = request.GET.get("region", None)
         itinary_id = request.GET.get("itinary", None)
-        agency = request.GET.get("itinary", None)
+        agency = request.GET.get("agency", None)
 
         records = []
 
