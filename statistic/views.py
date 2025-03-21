@@ -19,7 +19,7 @@ from utils.logger import logger
 from utils.pagination import PaginationHandlerMixin
 
 from region.models import Region
-from record.models import Record
+from record.models import Record, Action
 from itinary.models import Itinary
 
 # Create your views here.
@@ -55,6 +55,7 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
     def list(self, request):
         region_id = request.GET.get("region", None)
         itinary_id = request.GET.get("itinary", None)
+        agency = request.GET.get("itinary", None)
 
         records = []
 
@@ -73,6 +74,10 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
             itinary = self.get_itinary_object(block_code=itinary_id)
             if type(itinary) is Response : return itinary
             records = Record.objects.only("itinary").filter(itinary=itinary)
+        elif agency is not None:
+            records = Record.objects.only("itinary").filter(itinary__metadata__icontains='"AGENCE": "{}"'.format(agency))
+        else:
+            records = []
 
         action = request.GET.get("action", None)
         collector = request.GET.get("collector", None)
@@ -203,4 +208,46 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
                 "enterprise": serializer_enterprise_stats.data,
                 "collector": serializer_collector_stats.data,
             }
+        }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'], name='dtd_ytd', url_name='dtd_ytd', permission_classes=[IsAuthenticated])
+    def dtd_ytd(self, request):
+        date = request.GET.get("date", None)
+        if date is None:
+            return Response({
+                "status": False,
+                "message": "Please provide the 'date' params"
+            }, status=status.HTTP_404_NOT_FOUND)
+        date = datetime.strptime(date, DATETIME_FORMAT)
+        first_day = datetime(datetime.now().year, 1, 1)
+        
+        datas = []
+        actions = Action.objects.all()
+        records = []
+        regions = []
+
+        if request.user.is_superuser:
+            regions = Region.objects.all()
+            records = Record.objects.all()
+        else:
+            regions = request.user.region.all()
+            records = Record.objects.filter(itinary__region__in=regions)
+
+        for region in regions:
+            print(date)
+            records_dtd = records.filter(itinary__region=region, date__gte=make_aware(date, timezone=pytz.UTC))
+            # records_ytd = records.filter(itinary__region=region, date__gte=make_aware(first_day, timezone=pytz.UTC), date__lte=make_aware(date, timezone=pytz.UTC))
+            dtd_stats = records_dtd.values("action__name").annotate(total=Count("action"))
+            # ytd_stats = records_ytd.values("action__name").annotate(total=Count("action"))
+            datas.append({
+                "region": region.name,
+                "ytd": dtd_stats,
+                # "dyd": ytd_stats
+            })
+
+        logger.warning("Ranking stats loaded")
+        return Response({
+            "status": True,
+            "message": "Ranking stats loaded",
+            "detail": datas
         }, status=status.HTTP_200_OK)
