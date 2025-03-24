@@ -11,6 +11,7 @@ from config.models import Credential
 from record.models import Record, Collector, Action, Enterprise
 from itinary.models import Itinary
 from region.constants import SRID
+from utils.submission_json_to_models import submission_to_models
 
 class Command(BaseCommand):
     help = 'Get list of data for any FormConfig Save in th App'
@@ -42,40 +43,44 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR("Error when getting {} form datas").format(form["title"]))
             
             for data in response.json():
-                try:
-                    ona_id = data["id"]
+                saved = submission_to_models(data)
+                if not saved:
+                    self.stdout.write(self.style.ERROR("Error when saving {} record").format(data["id"] if "id" in data.keys() else "Unknow"))
+                
+                # try:
+                #     ona_id = data["id"]
 
-                    record, _ = Record.objects.get_or_create(ona_id=ona_id)
+                #     record, _ = Record.objects.get_or_create(ona_id=ona_id)
 
-                    if not _:
-                        self.stdout.write(self.style.WARNING("Record {} already saved".format(ona_id)))
+                #     if not _:
+                #         self.stdout.write(self.style.WARNING("Record {} already saved".format(ona_id)))
                     
-                    result = {}
-                    action, _ = Action.objects.get_or_create(name=data["action"])
-                    collector, _ = Collector.objects.get_or_create(name=data["Collecteur"])
-                    enterprise, _ = Enterprise.objects.get_or_create(name=data["entreprise_collecteur"])
-                    date = datetime.fromisoformat(data["date"])
-                    latitude = data["_geolocation"][0]
-                    longitude = data["_geolocation"][1]
+                #     result = {}
+                #     action, _ = Action.objects.get_or_create(name=data["action"])
+                #     collector, _ = Collector.objects.get_or_create(name=data["Collecteur"])
+                #     enterprise, _ = Enterprise.objects.get_or_create(name=data["entreprise_collecteur"])
+                #     date = datetime.fromisoformat(data["date"])
+                #     latitude = data["_geolocation"][0]
+                #     longitude = data["_geolocation"][1]
 
-                    for field in fields:
-                        if field in data.keys():
-                            result[field] = data[field]
-                        else:
-                            result[field] = None
+                #     for field in fields:
+                #         if field in data.keys():
+                #             result[field] = data[field]
+                #         else:
+                #             result[field] = None
                     
-                    record.data = json.dumps(result)
-                    record.action = action
-                    record.collector = collector
-                    record.enterprise = enterprise
-                    record.date = date
-                    point = Point(longitude, latitude, srid=SRID)
-                    itinaries = Itinary.objects.only("boundary").filter(boundary__contains=point)
-                    if itinaries.exists():
-                        record.itinary = itinaries[0]
-                        record.save()
-                    else:
-                        self.stdout.write("No itinary found for this submission {}".format(ona_id))
-                except:
-                    self.stdout.write(self.style.ERROR("Error during single reord process"))
+                #     record.data = json.dumps(result)
+                #     record.action = action
+                #     record.collector = collector
+                #     record.enterprise = enterprise
+                #     record.date = date
+                #     point = Point(longitude, latitude, srid=SRID)
+                #     itinaries = Itinary.objects.only("boundary").filter(boundary__contains=point)
+                #     if itinaries.exists():
+                #         record.itinary = itinaries[0]
+                #         record.save()
+                #     else:
+                #         self.stdout.write("No itinary found for this submission {}".format(ona_id))
+                # except:
+                #     self.stdout.write(self.style.ERROR("Error during single reord process"))
             self.stdout.write(self.style.SUCCESS("All data loaded for form {}".format(form["name"] or "Unknow")))

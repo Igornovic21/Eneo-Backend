@@ -94,30 +94,32 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
     
     @action(detail=False, methods=['get'], name='export', url_name='export', permission_classes=[AllowAny])
     def export(self, request):
-        region = request.GET.get("region", None)
-        # # itinary = request.GET.get("itinary", None)
-        # action = request.GET.get("action", None)
-        # collector = request.GET.get("collector", None)
-        # enterprise = request.GET.get("enterprise", None)
-        # min_date = request.GET.get("min_date", None)
-        # max_date = request.GET.get("max_date", None)
+        itinary = request.GET.get("itinary", None)
+        agency = request.GET.get("agency", None)
+        action = request.GET.get("action", None)
+        collector = request.GET.get("collector", None)
+        enterprise = request.GET.get("enterprise", None)
+        min_date = request.GET.get("min_date", None)
+        max_date = request.GET.get("max_date", None)
 
-        # records = Record.objects.all()
+        records = Record.objects.all()
         
-        # if region is not None:
-        #     records = records.only("itinary").filter(itinary__region=region)
-        # if action is not None:
-        #     records = records.only("action").filter(action__in=action.split(";"))
-        # if collector is not None:
-        #     records = records.only("collector").filter(collector__in=collector.split(";"))
-        # if enterprise is not None:
-        #     records = records.only("enterprise").filter(enterprise__in=enterprise.split(";"))
-        # if min_date is not None:
-        #     date = datetime.strptime(min_date, DATETIME_FORMAT)
-        #     records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC))
-        # if max_date is not None:
-        #     date = datetime.strptime(max_date, DATETIME_FORMAT)
-        #     records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
+        if action is not None:
+            records = records.only("action").filter(action__in=action.split(";"))
+        if collector is not None:
+            records = records.only("collector").filter(collector__in=collector.split(";"))
+        if enterprise is not None:
+            records = records.only("enterprise").filter(enterprise__in=enterprise.split(";"))
+        if agency is not None:
+            records = records.only("itinary").filter(itinary__metadata__icontains='"AGENCE": "{}"'.format(agency))
+        if itinary is not None:
+            records = Record.objects.only("itinary").filter(itinary=itinary)
+        if min_date is not None:
+            date = datetime.strptime(min_date, DATETIME_FORMAT)
+            records = records.only("date").filter(date__gte=make_aware(date, timezone=pytz.UTC))
+        if max_date is not None:
+            date = datetime.strptime(max_date, DATETIME_FORMAT)
+            records = records.only("date").filter(date__lte=make_aware(date, timezone=pytz.UTC))
 
         # page = self.paginate_queryset(records)
         # if page is not None:
@@ -131,19 +133,14 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
         #     "message": "Export data successfully",
         #     "detail": serializer.data
         # }, status=status.HTTP_200_OK)
-        region = request.GET.get("region", None)
-        
-        if region not in request.user.region.all():
-            return Response({
-                "status": False,
-                "message": "This region is not assigned to this user"
-            }, status=status.HTTP_403_FORBIDDEN)
-        
-        records = Record.objects.only("itinary").filter(itinary__region=region)
 
         workbook = openpyxl.Workbook()
         sheet = workbook.active
-        sheet.title = records[0].itinary.region.name
+        
+        if not records.exists():
+            sheet.title = request.user.region.all()[0].name
+        else:
+            sheet.title = records[0].itinary.region.name
 
         headers = [
             'ID',
