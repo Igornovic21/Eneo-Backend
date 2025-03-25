@@ -1,0 +1,160 @@
+import uuid
+
+from django.utils import timezone
+from django.db import models
+from django.contrib.gis.db import models as gis_models
+from django.contrib.gis.geos import Point
+
+from itinary.models import Itinary
+from region.constants import SRID
+
+# Create your models here.
+class Action(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
+
+    name = models.CharField(max_length=100)
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.name
+    
+    class Meta:
+        ordering = ['date_created']
+        indexes = [
+            models.Index(fields=['name']),
+        ]
+
+
+class Collector(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
+
+    name = models.CharField(max_length=100)
+    matricule = models.CharField(max_length=100, default="")
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.name
+    
+    class Meta:
+        ordering = ['date_created']
+        indexes = [
+            models.Index(fields=['name']),
+        ]
+
+
+class Enterprise(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
+    
+    name = models.CharField(max_length=100)
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.name
+    
+    class Meta:
+        ordering = ['date_created']
+        indexes = [
+            models.Index(fields=['name']),
+        ]
+
+
+class Record(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
+
+    ona_id = models.CharField(max_length=100, editable=False, unique=True, db_index=True)
+
+    contrat = models.CharField(max_length=100, default="", db_index=True)
+    amount = models.CharField(max_length=100, default="", db_index=True)
+    accessibility = models.CharField(max_length=100, default="", db_index=True)
+    code_anomaly = models.CharField(max_length=100, default="", db_index=True)
+    sealed_number = models.CharField(max_length=100, default="", db_index=True)
+    cut_action = models.CharField(max_length=100, default="", db_index=True)
+    delivery_points = models.PositiveIntegerField(default=0, db_index=True)
+
+    action = models.ForeignKey(Action, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True)
+    collector = models.ForeignKey(Collector, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True)
+    enterprise = models.ForeignKey(Enterprise, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True)
+    itinary = models.ForeignKey(Itinary, on_delete=models.DO_NOTHING, default=None, null=True, blank=True, related_name="records", db_index=True)
+    date = models.DateTimeField(default=timezone.now, db_index=True)
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        if self.itinary is None:
+            return self.ona_id
+        return self.ona_id + " " + self.itinary.name
+
+    class Meta:
+        ordering = ['-date']
+        indexes = [
+            models.Index(fields=['itinary']),
+            models.Index(fields=['ona_id']),
+            models.Index(fields=['action']),
+            models.Index(fields=['collector']),
+            models.Index(fields=['enterprise']),
+            models.Index(fields=['contrat']),
+            models.Index(fields=['amount']),
+            models.Index(fields=['accessibility']),
+            models.Index(fields=['code_anomaly']),
+            models.Index(fields=['sealed_number']),
+            models.Index(fields=['cut_action']),
+            models.Index(fields=['delivery_points']),
+        ]
+
+
+class Location(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
+
+    coordinates = gis_models.PointField(default=Point(0.0, 0.0), geography=True, srid=SRID)
+    record = models.OneToOneField(Record, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True, related_name="location")
+    
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return "Location for {}".format(self.record.ona_id)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=["record"]),
+            models.Index(fields=["coordinates"]),
+        ]
+
+
+class DeliveryPoint(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
+
+    type = models.CharField(max_length=100, default="", db_index=True)
+    status = models.CharField(max_length=100, default="", db_index=True)
+    activite = models.CharField(max_length=100, default="", db_index=True)
+    batiment = models.CharField(max_length=100, default="", db_index=True)
+    code_bare = models.CharField(max_length=100, unique=True, default="", db_index=True)
+    serial_number = models.CharField(max_length=100, unique=True, default="", db_index=True)
+    image_url = models.CharField(max_length=100, default=None, null=True, blank=True, db_index=True)
+    record = models.ForeignKey(Record, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True, related_name="pl")
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+    
+    def __str__(self) -> str:
+        return self.serial_number
+
+    class Meta:
+        ordering = ['-date_updated']
+        indexes = [
+            models.Index(fields=['type']),
+            models.Index(fields=['status']),
+            models.Index(fields=['activite']),
+            models.Index(fields=['batiment']),
+            models.Index(fields=['code_bare']),
+            models.Index(fields=['image_url']),
+            models.Index(fields=['serial_number']),
+            models.Index(fields=['record']),
+        ]
