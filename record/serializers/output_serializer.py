@@ -54,13 +54,13 @@ class EnterpriseSerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
 
 class RecordSerializer(serializers.ModelSerializer):
-    # action = ActionSerializer(many=False, read_only=True)
-    # collector = ActionSerializer(many=False, read_only=True)
-    # enterprise = ActionSerializer(many=False, read_only=True)
-    # itinary = ItinarySerializer(many=False, read_only=True)
+    action = ActionSerializer(many=False, read_only=True)
+    collector = ActionSerializer(many=False, read_only=True)
+    enterprise = ActionSerializer(many=False, read_only=True)
+    itinary = ItinarySerializer(many=False, read_only=True)
     location = LocationSerializer(many=False, read_only=True)
     pl = DeliveryPointSerializer(many=True, read_only=True)
 
     class Meta:
         model = Record
-        fields = ["id", "ona_id", "contrat", "amount", "accessibility", "code_anomaly", "sealed_number", "cut_action", "delivery_points", "action", "collector", "enterprise", "date", "location", "pl"]
+        fields = ["id", "ona_id", "contrat", "amount", "accessibility", "code_anomaly", "sealed_number", "cut_action", "delivery_points", "itinary", "action", "collector", "enterprise", "date", "location", "pl"]
