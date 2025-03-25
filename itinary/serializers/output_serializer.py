@@ -12,15 +12,11 @@ class RegionSerializer(serializers.ModelSerializer):
 
 class ItinarySerializer(serializers.ModelSerializer):
     metadata = serializers.SerializerMethodField()
-    records = serializers.SerializerMethodField()
     region = RegionSerializer(many=False, read_only=True)
     
     class Meta:
         model = Itinary
-        fields = ["id", "name", "metadata", "region", "block_code", "records"]
+        fields = ["id", "name", "metadata", "region", "block_code"]
 
     def get_metadata(self, obj):
         return json.loads(obj.metadata)
-
-    def get_records(self, obj):
-        return obj.records.count()
