@@ -19,7 +19,7 @@ from utils.logger import logger
 from utils.pagination import PaginationHandlerMixin
 
 from region.models import Region
-from record.models import Record, Action
+from record.models import Record, Action, DeliveryPoint
 from itinary.models import Itinary
 
 # Create your views here.
@@ -53,29 +53,17 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
             return Response(data, status=status.HTTP_404_NOT_FOUND)
 
     def list(self, request):
-        region_id = request.GET.get("region", None)
         itinary_id = request.GET.get("itinary", None)
         agency = request.GET.get("agency", None)
 
-        records = []
+        records = Record.objects.only("itinary").filter(itinary__region__in=request.user.region.all())
 
-        if region_id is None and itinary_id is None and agency is None:
-            logger.error("Provide at least one filter params (region, itinary)")
-            return Response({
-                "status": False,
-                "message": "Provide at least one filter params (region, itinary)",
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        if region_id is not None:
-            region = self.get_region_object(pk=region_id)
-            if type(region) is Response : return region
-            records = Record.objects.only("itinary").filter(itinary__region=region)
-        elif itinary_id is not None:
+        if itinary_id is not None:
             itinary = self.get_itinary_object(block_code=itinary_id)
             if type(itinary) is Response : return itinary
             records = Record.objects.only("itinary").filter(itinary=itinary)
         elif agency is not None:
-            records = Record.objects.only("itinary").filter(itinary__metadata__icontains='"AGENCE": "{}"'.format(agency))
+            records = records.only("itinary").filter(itinary__agency=agency)
 
         action = request.GET.get("action", None)
         collector = request.GET.get("collector", None)
@@ -91,24 +79,27 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
             records = records.only("enterprise").filter(enterprise__in=enterprise.split(";"))
         if min_date is not None:
             date = datetime.strptime(min_date, DATETIME_FORMAT)
-            records = records.only("date").filter(date__gt=make_aware(date, timezone=pytz.UTC))
+            records = records.only("date").filter(date__gte=make_aware(date, timezone=pytz.UTC))
         if max_date is not None:
             date = datetime.strptime(max_date, DATETIME_FORMAT)
-            records = records.only("date").filter(date__lt=make_aware(date, timezone=pytz.UTC))
+            records = records.only("date").filter(date__lte=make_aware(date, timezone=pytz.UTC))
 
         action_stats = records.values("action__name").annotate(total=Count("action"))
         enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
         serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
         serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
 
-        active_records = records.only("data").filter(data__icontains='"pl/info_pl/status": "actif"')
+        total_pl = DeliveryPoint.objects.filter(record__in=records)
+        active_pl = total_pl.only("status").filter(status="actif")
 
         logger.warning("Filtered records stats loaded")
         return Response({
             "status": True,
             "message": "Filtered records stats loaded",
             "detail": {
-                "percentage": 0 if len(records) == 0 else round(len(active_records) / len(records), 2) * 100,
+                "active_points": active_pl.count(),
+                "delivery_points": total_pl.count(),
+                "percentage": 0 if len(records) == 0 else round(len(active_pl) / len(total_pl), 2) * 100,
                 "statistics": {
                     "action": serializer_action_stats.data,
                     "enterprise": serializer_enterprise_stats.data,
@@ -143,8 +134,8 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
         
         min_date = datetime.strptime(min_date, DATETIME_FORMAT)
         max_date = datetime.strptime(max_date, DATETIME_FORMAT)
-        min_records = records.only("date").filter(date__gt=make_aware(min_date, timezone=pytz.UTC))
-        max_records = records.only("date").filter(date__gt=make_aware(max_date, timezone=pytz.UTC))
+        min_records = records.only("date").filter(date__gte=make_aware(min_date, timezone=pytz.UTC))
+        max_records = records.only("date").filter(date__gte=make_aware(max_date, timezone=pytz.UTC))
             
         min_action_stats = min_records.values("action__name").annotate(total=Count("action")).exclude(action__name=None)
         min_enterprise_stats = min_records.values("enterprise__name").annotate(total=Count("enterprise")).exclude(enterprise__name=None)
@@ -220,7 +211,6 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
         first_day = datetime(datetime.now().year, 1, 1)
         
         datas = []
-        actions = Action.objects.all()
         records = []
         regions = []
 
@@ -245,8 +235,8 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
                 dtd_totals += stat["total"]
             for stat in ytd_stats:
                 ytd_totals += stat["total"]
-            # region_records = records.only("itinary").filter(itinary__region=region)
-            # active_records = region_records.only("data").filter(data__icontains='"pl/info_pl/status": "actif"')
+            # total_pl = DeliveryPoint.objects.filter(record__in=records)
+            # active_pl = records.filter(pl__status="actif")
             datas.append({
                 "region": region.name,
                 "dtd": dtd_stats,
@@ -255,8 +245,8 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
                     "dtd": dtd_totals,
                     "ytd": ytd_totals
                 },
-                # "customers": active_records.count(),
-                # "active": 0 if len(region_records) == 0 else round(len(active_records) / len(region_records), 2) * 100,
+                # "customers": total_pl.count(),
+                # "active": 0 if len(total_pl) == 0 else round(len(active_pl) / len(total_pl), 2) * 100,
             })
 
         logger.warning("YTD - DTD datas loaded")

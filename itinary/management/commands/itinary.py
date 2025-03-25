@@ -30,6 +30,7 @@ class Command(BaseCommand):
                 key = ""
                 region = properties["REGION"]
                 repere = properties["REPERE"]
+                agency = properties["AGENCE"]
                 localite = properties["LOCALITE"]
                 block_code = properties["BLOCK_CODE"]
                 # key = "{} - {}".format(properties["REGION"], index) if properties["REPERE"] is None else properties["REPERE"] + " - {}".format(index)
@@ -63,7 +64,7 @@ class Command(BaseCommand):
                 # multi_polygon = MultiPolygon(polygons)
 
                 region, _ = Region.objects.get_or_create(name=region)
-                itinaries = Itinary.objects.only("name").filter(name__icontains=key)
+                # itinaries = Itinary.objects.only("name").filter(name__icontains=key)
 
                 # if itinaries.exists():
                 #     itinary = Itinary.objects.create(name=key + " - {}".format(len(itinaries) + 1))
@@ -72,6 +73,7 @@ class Command(BaseCommand):
                 itinary = Itinary.objects.create(name=key)
 
                 itinary.region = region
+                itinary.agency = agency
                 itinary.block_code = block_code
                 itinary.metadata = json.dumps(properties)
                 # itinary.boundary = multi_polygon
@@ -109,10 +111,3 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR("Error when saving itinary: {}".format(e)))
                 error_count += 1
         return self.stdout.write("Itinaries and regions data loaded: success: {}, error: {}, invalid: {}".format(success_count, error_count, invalid_geometry))
-
-# {
-#     "bloc": {
-#         "region": "",
-#         "polygons": []
-#     }
-# }

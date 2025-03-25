@@ -18,9 +18,9 @@ from django.contrib import admin
 from django.urls import path, include
 
 from user.views import AuthViewSet
-from region.views import RegionViewSet, RegionFilterSet
-from record.views import RecordViewSet, RecordFilterSet
-from itinary.views import ItinaryViewSet, ItinaryFilterSet
+from region.views import RegionFilterSet
+from record.views import RecordFilterSet
+from itinary.views import ItinaryFilterSet
 from config.views import ConfigViewSet
 from statistic.views import StatFilterSet
 
@@ -30,9 +30,6 @@ routers = routers.DefaultRouter()
 
 routers.register('auth', AuthViewSet, basename='auth')
 routers.register('configuration', ConfigViewSet, basename='configuration')
-routers.register('region', RegionViewSet, basename='region')
-routers.register('record', RecordViewSet, basename='record')
-routers.register('itinary', ItinaryViewSet, basename='itinary')
 routers.register('region-filter', RegionFilterSet, basename='region-filter')
 routers.register('record-filter', RecordFilterSet, basename='record-filter')
 routers.register('itinary-filter', ItinaryFilterSet, basename='itinary-filter')
