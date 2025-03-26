@@ -12,11 +12,10 @@ class RegionSerializer(serializers.ModelSerializer):
 
 class ItinarySerializer(serializers.ModelSerializer):
     metadata = serializers.SerializerMethodField()
-    region = RegionSerializer(many=False, read_only=True)
-    
+
     class Meta:
         model = Itinary
-        fields = ["id", "name", "metadata", "region", "block_code"]
+        fields = ["name", "metadata"]
 
     def get_metadata(self, obj):
         return json.loads(obj.metadata)
