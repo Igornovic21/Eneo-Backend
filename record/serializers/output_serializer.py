@@ -25,7 +25,7 @@ class DeliveryPointSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DeliveryPoint
-        fields = ["type", "status", "activite", "batiment", "code_bare", "serial_number", "image_url"]
+        fields = ["type", "status", "activite", "batiment", "code_bare", "serial_number", "reason", "image_url"]
 
 
 class LocationSerializer(gis_serializers.GeoFeatureModelSerializer):
@@ -39,7 +39,7 @@ class LocationSerializer(gis_serializers.GeoFeatureModelSerializer):
         coordinates = instance.coordinates
 
         if coordinates:
-            return [coordinates.y, coordinates.x]
+            return [coordinates.x, coordinates.y]
         return None
 
 
