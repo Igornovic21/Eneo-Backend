@@ -6,7 +6,7 @@ from itinary.models import Itinary
 from record.models import Record, DeliveryPoint, Action, Enterprise, Collector, Location
 from region.constants import SRID
 
-def submission_to_models(json: dict) -> bool:
+def dry_to_models(json: dict) -> bool:
     try:
         latitude = json["_geolocation"][0]
         longitude = json["_geolocation"][1]
@@ -47,10 +47,7 @@ def submission_to_models(json: dict) -> bool:
                         type=pl["pl/info_pl/type_compteur"] if "pl/info_pl/type_compteur" in pl.keys() else "",
                         serial_number=pl["pl/info_pl/serial_number"] if "pl/info_pl/serial_number" in pl.keys() else "",
                     )
-                    if "_attachments" in json.keys():
-                        for attachment in json["_attachments"]:
-                            if attachment["name"] == pl["pl/info_pl/photo_index"]:
-                                delivery_point.image_url = attachment["download_url"]
+                    delivery_point.image_url = json["_attachments"][0]["download_url"] if "download_url" in json["_attachments"][0].keys() else ""
                     delivery_point.record = record
                     delivery_point.save()
         return True

@@ -136,8 +136,8 @@ class DeliveryPoint(models.Model):
     status = models.CharField(max_length=100, default="", db_index=True)
     activite = models.CharField(max_length=100, default="", db_index=True)
     batiment = models.CharField(max_length=100, default="", db_index=True)
-    code_bare = models.CharField(max_length=100, unique=True, default="", db_index=True)
-    serial_number = models.CharField(max_length=100, unique=True, default="", db_index=True)
+    code_bare = models.CharField(max_length=100, default="", db_index=True)
+    serial_number = models.CharField(max_length=100, default="", db_index=True)
     image_url = models.CharField(max_length=100, default=None, null=True, blank=True, db_index=True)
     record = models.ForeignKey(Record, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True, related_name="pl")
 
