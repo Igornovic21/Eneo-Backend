@@ -132,6 +132,7 @@ class DeliveryPoint(models.Model):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
 
     type = models.CharField(max_length=100, default="", db_index=True)
+    reason = models.CharField(max_length=100, default="", db_index=True)
     status = models.CharField(max_length=100, default="", db_index=True)
     activite = models.CharField(max_length=100, default="", db_index=True)
     batiment = models.CharField(max_length=100, default="", db_index=True)
