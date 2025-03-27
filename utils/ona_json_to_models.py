@@ -38,21 +38,25 @@ def ona_to_models(json: dict) -> bool:
             Location.objects.create(coordinates=point, record=record)
             if "pl" in json.keys():
                 for pl in json["pl"]:
-                    delivery_point = DeliveryPoint.objects.create(
-                        status=pl["pl/info_pl/status"] if "pl/info_pl/status" in pl.keys() else "",
-                        reason=pl["pl/info_pl/raison"] if "pl/info_pl/raison" in pl.keys() else "",
-                        activite=pl["pl/info_pl/activite"] if "pl/info_pl/activite" in pl.keys() else "",
-                        batiment=pl["pl/info_pl/batiment"] if "pl/info_pl/batiment" in pl.keys() else "",
-                        code_bare=pl["pl/info_pl/code_bare"] if "pl/info_pl/code_bare" in pl.keys() else "",
-                        type=pl["pl/info_pl/type_compteur"] if "pl/info_pl/type_compteur" in pl.keys() else "",
+                    if not DeliveryPoint.objects.filter(
                         serial_number=pl["pl/info_pl/serial_number"] if "pl/info_pl/serial_number" in pl.keys() else "",
-                    )
-                    if "_attachments" in json.keys():
-                        for attachment in json["_attachments"]:
-                            if attachment["name"] == pl["pl/info_pl/photo_index"] if "pl/info_pl/photo_index" in pl.keys() else attachment["name"]:
-                                delivery_point.image_url = attachment["download_url"] if "download_url" in attachment.keys() else ""
-                    delivery_point.record = record
-                    delivery_point.save()
+                        record=record
+                        ).exists():
+                        delivery_point = DeliveryPoint.objects.create(
+                            status=pl["pl/info_pl/status"] if "pl/info_pl/status" in pl.keys() else "",
+                            reason=pl["pl/info_pl/raison"] if "pl/info_pl/raison" in pl.keys() else "",
+                            activite=pl["pl/info_pl/activite"] if "pl/info_pl/activite" in pl.keys() else "",
+                            batiment=pl["pl/info_pl/batiment"] if "pl/info_pl/batiment" in pl.keys() else "",
+                            code_bare=pl["pl/info_pl/code_bare"] if "pl/info_pl/code_bare" in pl.keys() else "",
+                            type=pl["pl/info_pl/type_compteur"] if "pl/info_pl/type_compteur" in pl.keys() else "",
+                            serial_number=pl["pl/info_pl/serial_number"] if "pl/info_pl/serial_number" in pl.keys() else "",
+                        )
+                        if "_attachments" in json.keys():
+                            for attachment in json["_attachments"]:
+                                if attachment["name"] == pl["pl/info_pl/photo_index"] if "pl/info_pl/photo_index" in pl.keys() else attachment["name"]:
+                                    delivery_point.image_url = attachment["download_url"] if "download_url" in attachment.keys() else ""
+                        delivery_point.record = record
+                        delivery_point.save()
         return True
     except Exception as e:
         print(json["id"])

@@ -1,4 +1,5 @@
 from datetime import datetime
+from django.utils import timezone
 
 from django.contrib.gis.geos import Point
 
@@ -6,8 +7,7 @@ from itinary.models import Itinary
 from record.models import Record, DeliveryPoint, Action, Enterprise, Collector, Location
 from region.constants import SRID
 
-def dry_to_models(json: dict) -> bool:
-    print(json)
+def drsm_to_models(json: dict) -> bool:
     try:
         latitude = json["_geolocation"][0]
         longitude = json["_geolocation"][1]
@@ -32,7 +32,8 @@ def dry_to_models(json: dict) -> bool:
             record.collector = collector
             record.enterprise = enterprise
             record.itinary = itinaries[0]
-            date = datetime.fromisoformat(json["date"])
+            date = datetime.strptime(json["date"], "%d/%m/%Y %H:%M")
+            date = timezone.make_aware(date, timezone.get_current_timezone())
             record.date = date
             record.save()
 
