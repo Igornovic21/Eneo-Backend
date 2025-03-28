@@ -1,4 +1,5 @@
 from datetime import datetime
+from django.utils import timezone
 
 from django.contrib.gis.geos import Point
 
@@ -6,7 +7,7 @@ from itinary.models import Itinary
 from record.models import Record, DeliveryPoint, Action, Enterprise, Collector, Location
 from region.constants import SRID
 
-def submission_to_models(json: dict) -> bool:
+def drc_to_models(json: dict) -> bool:
     try:
         latitude = json["_geolocation"][0]
         longitude = json["_geolocation"][1]
@@ -31,28 +32,30 @@ def submission_to_models(json: dict) -> bool:
             record.collector = collector
             record.enterprise = enterprise
             record.itinary = itinaries[0]
-            date = datetime.fromisoformat(json["date"])
+            date = datetime.strptime(json["date"], "%m/%d/%Y %H:%M")
+            date = timezone.make_aware(date, timezone.get_current_timezone())
             record.date = date
             record.save()
 
             Location.objects.create(coordinates=point, record=record)
             if "pl" in json.keys():
                 for pl in json["pl"]:
-                    delivery_point = DeliveryPoint.objects.create(
-                        status=pl["pl/info_pl/status"] if "pl/info_pl/status" in pl.keys() else "",
-                        reason=pl["pl/info_pl/raison"] if "pl/info_pl/raison" in pl.keys() else "",
-                        activite=pl["pl/info_pl/activite"] if "pl/info_pl/activite" in pl.keys() else "",
-                        batiment=pl["pl/info_pl/batiment"] if "pl/info_pl/batiment" in pl.keys() else "",
-                        code_bare=pl["pl/info_pl/code_bare"] if "pl/info_pl/code_bare" in pl.keys() else "",
-                        type=pl["pl/info_pl/type_compteur"] if "pl/info_pl/type_compteur" in pl.keys() else "",
+                    if not DeliveryPoint.objects.filter(
                         serial_number=pl["pl/info_pl/serial_number"] if "pl/info_pl/serial_number" in pl.keys() else "",
-                    )
-                    if "_attachments" in json.keys():
-                        for attachment in json["_attachments"]:
-                            if attachment["name"] == pl["pl/info_pl/photo_index"]:
-                                delivery_point.image_url = attachment["download_url"]
-                    delivery_point.record = record
-                    delivery_point.save()
+                        record=record
+                        ).exists():
+                        delivery_point = DeliveryPoint.objects.create(
+                            status=pl["pl/info_pl/status"] if "pl/info_pl/status" in pl.keys() else "",
+                            reason=pl["pl/info_pl/raison"] if "pl/info_pl/raison" in pl.keys() else "",
+                            activite=pl["pl/info_pl/activite"] if "pl/info_pl/activite" in pl.keys() else "",
+                            batiment=pl["pl/info_pl/batiment"] if "pl/info_pl/batiment" in pl.keys() else "",
+                            code_bare=pl["pl/info_pl/code_bare"] if "pl/info_pl/code_bare" in pl.keys() else "",
+                            type=pl["pl/info_pl/type_compteur"] if "pl/info_pl/type_compteur" in pl.keys() else "",
+                            serial_number=pl["pl/info_pl/serial_number"] if "pl/info_pl/serial_number" in pl.keys() else "",
+                        )
+                        delivery_point.image_url = json["_attachments"][0]["download_url"] if "download_url" in json["_attachments"][0].keys() else ""
+                        delivery_point.record = record
+                        delivery_point.save()
         return True
     except Exception as e:
         print(e)

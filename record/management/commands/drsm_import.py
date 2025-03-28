@@ -9,6 +9,7 @@ from django.core.management.base import BaseCommand
 from record.models import Record, Collector, Action, Enterprise
 from itinary.models import Itinary
 from region.constants import SRID
+from utils.drsm_json_to_models import drsm_to_models
 
 class Command(BaseCommand):
     help = 'Import records from csv file'
@@ -79,35 +80,9 @@ class Command(BaseCommand):
                         "action_coupure": action_coupure,
                         "entreprise_collecteur": entreprise_collecteur
                     }
-
-                    try:
-                        ona_id = data["id"]
-                        latitude = data["_geolocation"][0]
-                        longitude = data["_geolocation"][1]
-                        point = Point(longitude, latitude, srid=SRID)
-                        itinaries = Itinary.objects.only("boundary").filter(boundary__contains=point)
-                        if itinaries.exists():
-                            record, _ = Record.objects.get_or_create(ona_id=ona_id)
-                            if not _:
-                                self.stdout.write(self.style.WARNING("Record {} already saved".format(ona_id)))
-                            action, _ = Action.objects.get_or_create(name=data["action"])
-                            collector, _ = Collector.objects.get_or_create(name=data["Collecteur"])
-                            enterprise, _ = Enterprise.objects.get_or_create(name=data["entreprise_collecteur"])
-                            date = datetime.strptime(data["date"], "%d/%m/%Y %H:%M")
-                            date = timezone.make_aware(date, timezone.get_current_timezone())
-                            record.data = json.dumps(data)
-                            record.action = action
-                            record.collector = collector
-                            record.enterprise = enterprise
-                            record.date = date
-                            record.itinary = itinaries[0]
-                            record.save()
-                        else:
-                            self.stdout.write("No itinary found for this submission {}".format(ona_id))         
-                        
-                    except Exception as e:
-                        print(e)
-                        self.stdout.write(self.style.ERROR("Error during single reord process"))
+                    saved = drsm_to_models(data)
+                    if not saved:
+                        self.stdout.write(self.style.ERROR("Error when saving {} record").format(data["id"] if "id" in data.keys() else "Unknow"))
                 except Exception as e:
                     print(e)
                     self.stdout.write(self.style.ERROR("Error during single reord process"))

@@ -9,6 +9,7 @@ from config.models import Credential
 from record.models import Record, Collector, Action, Enterprise
 from itinary.models import Itinary
 from region.constants import SRID
+from utils.drd_json_to_models import drd_to_models
 
 class Command(BaseCommand):
     help = 'Import records from csv file'
@@ -79,46 +80,9 @@ class Command(BaseCommand):
                         "action_coupure": action_coupure,
                         "entreprise_collecteur": entreprise_collecteur
                     }
-
-                    try:
-                        print(data)         
-                        ona_id = data["id"]
-                        record, _ = Record.objects.get_or_create(ona_id=ona_id)
-                        if not _:
-                            self.stdout.write(self.style.WARNING("Record {} already saved".format(ona_id)))
-                        if data["action"] is None:
-                            action = None
-                        else:
-                            action, _ = Action.objects.get_or_create(name=data["action"])
-                        if data["Collecteur"] is None:
-                            collector = None
-                        else:
-                            collector, _ = Collector.objects.get_or_create(name=data["Collecteur"])
-                        if data["entreprise_collecteur"] is None:
-                            enterprise = None
-                        else:
-                            enterprise, _ = Enterprise.objects.get_or_create(name=data["entreprise_collecteur"])
-                        date = datetime.strptime(data["date"], "%d/%m/%Y %H:%M")
-                        date = timezone.make_aware(date, timezone.get_current_timezone())
-                        latitude = data["_geolocation"][0]
-                        longitude = data["_geolocation"][1]
-                        record.data = json.dumps(data)
-                        record.action = action
-                        record.collector = collector
-                        record.enterprise = enterprise
-                        record.date = date
-                        point = Point(longitude, latitude, srid=SRID)
-                        itinaries = Itinary.objects.only("boundary").filter(boundary__contains=point)
-                        print(itinaries)
-                        if itinaries.exists():
-                            record.itinary = itinaries[0]
-                            record.save()
-                        else:
-                            self.stdout.write("No itinary found for this submission {}".format(ona_id))
-                    except Exception as e:
-                        print(e)
-                        print("during saving ============")
-                        self.stdout.write(self.style.ERROR("Error during single record process"))
+                    saved = drd_to_models(data)
+                    if not saved:
+                        self.stdout.write(self.style.ERROR("Error when saving {} record").format(data["id"] if "id" in data.keys() else "Unknow"))
                 except Exception as y:
                     print(y)
                     print("during saving ============")
