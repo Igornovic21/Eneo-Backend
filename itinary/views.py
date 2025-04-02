@@ -62,6 +62,7 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
                 "message": "This region is not assigned to this user"
             }, status=status.HTTP_403_FORBIDDEN)
 
+        agency = request.GET.get("agency", None)
         action = request.GET.get("action", None)
         collector = request.GET.get("collector", None)
         enterprise = request.GET.get("enterprise", None)
@@ -70,6 +71,8 @@ class ItinaryFilterSet(ViewSet, PaginationHandlerMixin):
 
         records = Record.objects.only("itinary").filter(itinary=itinary)
         
+        if agency is not None:
+            records = records.only("itinary").filter(itinary__agency=agency)
         if action is not None:
             records = records.only("action").filter(action__in=action.split(";"))
         if collector is not None:
