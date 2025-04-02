@@ -53,24 +53,20 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
             return Response(data, status=status.HTTP_404_NOT_FOUND)
 
     def list(self, request):
-        itinary_id = request.GET.get("itinary", None)
-        agency = request.GET.get("agency", None)
-
         records = Record.objects.only("itinary").filter(itinary__region__in=request.user.region.all())
 
-        if itinary_id is not None:
-            itinary = self.get_itinary_object(block_code=itinary_id)
-            if type(itinary) is Response : return itinary
-            records = Record.objects.only("itinary").filter(itinary=itinary)
-        elif agency is not None:
-            records = records.only("itinary").filter(itinary__agency=agency)
-
+        itinary = request.GET.get("itinary", None)
+        agency = request.GET.get("agency", None)
         action = request.GET.get("action", None)
         collector = request.GET.get("collector", None)
         enterprise = request.GET.get("enterprise", None)
         min_date = request.GET.get("min_date", None)
         max_date = request.GET.get("max_date", None)
         
+        if itinary is not None:
+            records = records.only("itinary").filter(itinary__block_code=itinary)
+        elif agency is not None:
+            records = records.only("itinary").filter(itinary__agency=agency)
         if action is not None:
             records = records.only("action").filter(action__in=action.split(";"))
         if collector is not None:

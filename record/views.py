@@ -63,6 +63,7 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
 
         action = request.GET.get("action", None)
         agency = request.GET.get("agency", None)
+        itinary = request.GET.get("itinary", None)
         collector = request.GET.get("collector", None)
         enterprise = request.GET.get("enterprise", None)
         min_date = request.GET.get("min_date", None)
@@ -70,10 +71,12 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
 
         records = Record.objects.only("itinary").filter(itinary__region=region)
         
-        if action is not None:
-            records = records.only("action").filter(action__in=action.split(";"))
         if agency is not None:
             records = records.only("itinary").filter(itinary__agency=agency)
+        if itinary is not None:
+            records = records.only("itinary").filter(itinary__block_code=itinary)
+        if action is not None:
+            records = records.only("action").filter(action__in=action.split(";"))
         if collector is not None:
             records = records.only("collector").filter(collector__in=collector.split(";"))
         if enterprise is not None:
