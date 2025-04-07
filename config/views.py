@@ -7,7 +7,7 @@ from rest_framework.decorators import authentication_classes, action
 from rest_framework import status
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from authorization.authentication import ExpiringTokenAuthentication
 
@@ -91,8 +91,16 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             "detail": serializer.data,
         }, status=status.HTTP_200_OK)
     
-    @action(detail=False, methods=['get'], name='export', url_name='export')
-    def export(self, request):
+    @action(detail=True, methods=['get'], name='export', url_name='export', permission_classes=[AllowAny])
+    def export(self, request, pk=None):
+        region = self.get_region_object(pk=pk)
+        if type(region) is Response : return region
+        if region not in request.user.region.all():
+            return Response({
+                "status": False,
+                "message": "This region is not assigned to this user"
+            }, status=status.HTTP_403_FORBIDDEN)
+        
         itinary = request.GET.get("itinary", None)
         agency = request.GET.get("agency", None)
         action = request.GET.get("action", None)
@@ -101,7 +109,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
         min_date = request.GET.get("min_date", None)
         max_date = request.GET.get("max_date", None)
 
-        records = Record.objects.only("itinary").filter(itinary__region__in=request.user.region.all())
+        records = Record.objects.only("itinary").filter(itinary__region=region)
         
         if action is not None:
             records = records.only("action").filter(action__in=action.split(";"))
