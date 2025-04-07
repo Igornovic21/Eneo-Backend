@@ -7,12 +7,11 @@ from rest_framework.decorators import authentication_classes, action
 from rest_framework import status
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 
 from authorization.authentication import ExpiringTokenAuthentication
 
 from constants.config import DATETIME_FORMAT
-from constants.ona_api import ONA_BASE_URL
 from record.serializers.output_serializer import ActionSerializer, CollectorSerializer, EnterpriseSerializer, RecordSerializer
 from region.serializers.output_serializer import RegionSerializer
 
@@ -21,7 +20,7 @@ from utils.pagination import PaginationHandlerMixin, BasicPagination
 
 from region.models import Region
 from itinary.models import Itinary
-from record.models import Collector, Action, Enterprise, Record
+from record.models import Collector, Action, Enterprise, Record, DeliveryPoint
 
 @authentication_classes([ExpiringTokenAuthentication])
 class ConfigViewSet(ViewSet, PaginationHandlerMixin):
@@ -92,7 +91,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             "detail": serializer.data,
         }, status=status.HTTP_200_OK)
     
-    @action(detail=False, methods=['get'], name='export', url_name='export', permission_classes=[AllowAny])
+    @action(detail=False, methods=['get'], name='export', url_name='export')
     def export(self, request):
         itinary = request.GET.get("itinary", None)
         agency = request.GET.get("agency", None)
@@ -102,7 +101,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
         min_date = request.GET.get("min_date", None)
         max_date = request.GET.get("max_date", None)
 
-        records = Record.objects.all()
+        records = Record.objects.only("itinary").filter(itinary__region__in=request.user.region.all())
         
         if action is not None:
             records = records.only("action").filter(action__in=action.split(";"))
@@ -111,28 +110,15 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
         if enterprise is not None:
             records = records.only("enterprise").filter(enterprise__in=enterprise.split(";"))
         if agency is not None:
-            records = records.only("itinary").filter(itinary__metadata__icontains='"AGENCE": "{}"'.format(agency))
+            records = records.only("itinary").filter(itinary__agency=agency)
         if itinary is not None:
-            records = Record.objects.only("itinary").filter(itinary=itinary)
+            records = records.only("itinary").filter(itinary__block_code=itinary)
         if min_date is not None:
             date = datetime.strptime(min_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__gte=make_aware(date, timezone=pytz.UTC))
         if max_date is not None:
             date = datetime.strptime(max_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__lte=make_aware(date, timezone=pytz.UTC))
-
-        # page = self.paginate_queryset(records)
-        # if page is not None:
-        #     serializer = self.get_paginated_response(self.record_serializer_class(page, many=True).data)
-        # else:
-        #     serializer = self.record_serializer_class(records, many=True)
-        # # serializer = self.record_serializer_class(records, many=True)
-        # logger.warning("Export data successfully")
-        # return Response({
-        #     "status": True,
-        #     "message": "Export data successfully",
-        #     "detail": serializer.data
-        # }, status=status.HTTP_200_OK)
 
         workbook = openpyxl.Workbook()
         sheet = workbook.active
@@ -150,8 +136,12 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             'Action',
             'Nbre_PL',
             'Type_PL',
-            'No_PL',
+            'No_Serie_PL',
+            'Code_Barre_PL',
+            'Raison_PL',
+            'Batiment_PL',
             'Status_PL',
+            'Images_PL',
             'Lattitude',
             'Longitude',
             'Contrat',
@@ -160,77 +150,48 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             'Anomalie',
             'No_scelle',
             'Action_coupure',
-            'images'
-        ]
-        sheet.append(headers)
-
-        # id: submission.data.id,
-        # matricule_co: submission.data.matricule_co,
-        # collecteur: submission.data.Collecteur,
-        # entreprise: submission.data.entreprise_collecteur,
-        # action: submission.data.action,
-        # nbre_pl: submission.data.nbr_pl,
-        # contrat: submission.data.contrat,
-        # montant: submission.data.montant,
-        # accessibilite: submission.data.accesibilite,
-        # anomalie: submission.data.code_anomaly,
-        # no_scelle: submission.data.numero_scelle,
-        # action_coupure: submission.data.action_coupure,
-        # lat_long: submission.data._geolocation.join(';'),
-        # images: imgs.join(';'),
-
-        headers = [
-            'ID',
-            'Matricule_co',
-            'Collecteur',
-            'Entreprise',
-            'Action',
-            'Nbre_PL',
-            'Type_PL',
-            'No_PL',
-            'Status_PL',
-            'Lattitude',
-            'Longitude',
-            'Contrat',
-            'Montant',
-            'Accessibilite',
-            'Anomalie',
-            'No_scelle',
-            'Action_coupure',
-            'Images',
             'Date'
         ]
+        sheet.append(headers)
         for record in records:
-            data = json.loads(record.data)
             images = []
             types = []
             no_series = []
+            bar_codes = []
+            reasons = []
+            batiments = []
             status = []
-            for pl in data["pl"]:
-                types.append(pl["pl/info_pl/type_compteur"])
-                no_series.append(pl["pl/info_pl/serial_number"])
-                status.append(pl["pl/info_pl/status"])
-            for img in data["_attachments"]:
-                images.append(ONA_BASE_URL + img["download_url"])
+            delivery_points = DeliveryPoint.objects.only("record").filter(record=record)
+            for delivery_point in delivery_points:
+                images.append(delivery_point.image_url)
+                types.append(delivery_point.type)
+                no_series.append(delivery_point.serial_number)
+                bar_codes.append(delivery_point.code_bare)
+                reasons.append(delivery_point.reason)
+                batiments.append(delivery_point.batiment)
+                status.append(delivery_point.status)
             sheet.append([
-                data["id"],
-                data["matricule_co"],
-                data["Collecteur"],
-                data["entreprise_collecteur"],
-                data["action"],
-                data["nbr_pl"],
+                record.ona_id,
+                record.collector.matricule,
+                record.collector.name,
+                record.enterprise.name,
+                record.action.name,
+                len(delivery_points),
                 ";".join(types),
                 ";".join(no_series),
+                ";".join(bar_codes),
+                ";".join(reasons),
+                ";".join(batiments),
                 ";".join(status),
-                data["_geolocation"][0],
-                data["_geolocation"][1],
-                data["contrat"],
-                data["montant"],
-                data["accesibilite"],
-                data["code_anomaly"],
-                data["numero_scelle"],
-                data["action_coupure"],
                 ";".join(images),
+                record.location.coordinates.x,
+                record.location.coordinates.y,
+                record.contrat,
+                record.amount,
+                record.accessibility,
+                record.code_anomaly,
+                record.sealed_number,
+                record.cut_action,
                 record.date.strftime("%d/%m/%Y, %H:%M:%S")
             ])
         
