@@ -4,7 +4,7 @@ from datetime import datetime
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
 
-from constants.config import ONA_PROJECT
+from constants.config import ONA_PROJECTS
 from constants.ona_api import ONA_DATA_URL, ONA_PROJECT_URL
 
 from config.models import Credential
@@ -21,8 +21,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         credential = Credential.objects.first()
-        fields = credential.fields.split("/")
-        ona_forms = []
+        target_forms = []
         HEADERS = {
             "Authorization": "Token {}".format(credential.ona_token)
         }
@@ -32,10 +31,11 @@ class Command(BaseCommand):
             return self.stdout.write(self.style.ERROR("Error when getting list of forms"))
         
         for project in response.json():
-            if project["name"] == ONA_PROJECT:
-                ona_forms = project["forms"]
-                    
-        for form in ona_forms:
+            if project["name"] in ONA_PROJECTS:
+                target_forms += project["forms"]
+        
+        print(len(target_forms))
+        for form in target_forms:
             print(form)
             response = requests.get(ONA_DATA_URL.format(form["formid"]), headers=HEADERS)
             
