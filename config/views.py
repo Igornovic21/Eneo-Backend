@@ -91,7 +91,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             "detail": serializer.data,
         }, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['get'], name='export', url_name='export', permission_classes=[AllowAny])
+    @action(detail=True, methods=['get'], name='export', url_name='export')
     def export(self, request, pk=None):
         region = self.get_region_object(pk=pk)
         if type(region) is Response : return region
