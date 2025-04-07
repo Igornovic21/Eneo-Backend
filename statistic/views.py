@@ -93,7 +93,7 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
             "status": True,
             "message": "Filtered records stats loaded",
             "detail": {
-                "active_points": active_pl.count(),
+                "active_delivery_points": active_pl.count(),
                 "delivery_points": total_pl.count(),
                 "percentage": 0 if len(records) == 0 else round(len(active_pl) / len(total_pl), 2) * 100,
                 "statistics": {
