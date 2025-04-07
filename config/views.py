@@ -163,7 +163,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             status = []
             delivery_points = DeliveryPoint.objects.only("record").filter(record=record)
             for delivery_point in delivery_points:
-                images.append(delivery_point.image_url)
+                images.append('https://api.ona.io' + delivery_point.image_url if delivery_point.image_url != "" else "")
                 types.append(delivery_point.type)
                 no_series.append(delivery_point.serial_number)
                 bar_codes.append(delivery_point.code_bare)
