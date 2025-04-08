@@ -80,12 +80,12 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
             date = datetime.strptime(max_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__lte=make_aware(date, timezone=pytz.UTC))
 
-        action_stats = records.values("action__name").annotate(total=Count("action"))
-        enterprise_stats = records.values("enterprise__name").annotate(total=Count("enterprise"))
+        total_pl = DeliveryPoint.objects.filter(record__in=records)
+
+        action_stats = total_pl.values("record__action__name").annotate(total=Count("record__action"))
+        enterprise_stats = total_pl.values("record__enterprise__name").annotate(total=Count("record__enterprise"))
         serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
         serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
-
-        total_pl = DeliveryPoint.objects.filter(record__in=records)
         active_pl = total_pl.only("status").filter(status="actif")
 
         logger.warning("Filtered records stats loaded")
