@@ -91,15 +91,15 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             "detail": serializer.data,
         }, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['get'], name='export', url_name='export')
+    @action(detail=True, methods=['get'], name='export', url_name='export', permission_classes=[AllowAny])
     def export(self, request, pk=None):
         region = self.get_region_object(pk=pk)
         if type(region) is Response : return region
-        if region not in request.user.region.all():
-            return Response({
-                "status": False,
-                "message": "This region is not assigned to this user"
-            }, status=status.HTTP_403_FORBIDDEN)
+        # if region not in request.user.region.all():
+        #     return Response({
+        #         "status": False,
+        #         "message": "This region is not assigned to this user"
+        #     }, status=status.HTTP_403_FORBIDDEN)
         
         itinary = request.GET.get("itinary", None)
         agency = request.GET.get("agency", None)
@@ -132,7 +132,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
         sheet = workbook.active
         
         if not records.exists():
-            sheet.title = request.user.region.all()[0].name
+            sheet.title = region.name
         else:
             sheet.title = records[0].itinary.region.name
 
