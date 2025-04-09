@@ -19,7 +19,6 @@ from utils.pagination import PaginationHandlerMixin, BasicPagination
 
 from region.models import Region
 from record.models import Record
-from itinary.models import Itinary
     
 @authentication_classes([ExpiringTokenAuthentication])
 class RegionFilterSet(ViewSet, PaginationHandlerMixin):
@@ -73,7 +72,7 @@ class RegionFilterSet(ViewSet, PaginationHandlerMixin):
             datas.append({
                 "id": region.id,
                 "name": region.name,
-                "records": records.count()
+                "records": 0
             })
             
         serializer = self.serializer_class(datas, many=True)
