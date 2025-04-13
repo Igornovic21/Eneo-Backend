@@ -12,7 +12,7 @@ from utils.odk_json_to_models import odk_to_models
 
 @receiver(models.signals.post_save, sender=OdkPosition)
 def load_data_csv(sender, instance, **kwargs):
-    name = instance.file.name.split(".")[0] if len(instance.form_name) <= 0 else instance.file.name.split(".")[0]
+    name = instance.file.name.split(".")[0] if len(instance.form_name) <= 0 else instance.form_name
     project_id = instance.project_id
     with open(os.path.join(instance.file.path), mode='r', encoding='utf-8') as file:
         csv_reader = csv.reader(file)
@@ -24,13 +24,12 @@ def load_data_csv(sender, instance, **kwargs):
                 index += 1
                 pl_image_url = ""
                 if len(row[33]) > 0:
-                    print(row[33])
                     pl_image_url = "{}/projects/{}/forms/{}/submissions/{}/attachments/{}".format(ODK_BASE_URL, project_id, name, row[53], row[33])
                 poste_image_url = ""
                 if len(row[8]) > 0:
                     poste_image_url = "{}/projects/{}/forms/{}/submissions/{}/attachments/{}".format(ODK_BASE_URL, project_id, name, row[53], row[8])
                 pl = {
-                    "pl/info_pl/status": "actif" if row[21] == "ACTIVE" else "inactif",
+                    "pl/info_pl/status": "actif" if row[21] == "oui" else "inactif",
                     "pl/info_pl/activite": row[29],
                     "pl/info_pl/batiment": row[24],
                     "pl/info_pl/code_bare": row[19],
