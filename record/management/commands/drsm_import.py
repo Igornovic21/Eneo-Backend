@@ -33,9 +33,9 @@ class Command(BaseCommand):
                         "filename": None,
                         "instance": None,
                         "mimetype": None,
-                        "download_url": None,
-                        "small_download_url": None,
-                        "medium_download_url": None
+                        "download_url": "",
+                        "small_download_url": "",
+                        "medium_download_url": ""
                     }
                     pl = {
                         "pl/info_pl/status": "actif" if row[50] == "Connu" else "inactif",
