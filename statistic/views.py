@@ -75,10 +75,10 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
             records = records.only("enterprise").filter(enterprise__in=enterprise.split(";"))
         if min_date is not None:
             date = datetime.strptime(min_date, DATETIME_FORMAT)
-            records = records.only("date").filter(date__gte=make_aware(date, timezone=pytz.UTC))
+            records = records.only("date").filter(date__date__gte=make_aware(date, timezone=pytz.UTC))
         if max_date is not None:
             date = datetime.strptime(max_date, DATETIME_FORMAT)
-            records = records.only("date").filter(date__lte=make_aware(date, timezone=pytz.UTC))
+            records = records.only("date").filter(date__date__lte=make_aware(date, timezone=pytz.UTC))
 
         total_pl = DeliveryPoint.objects.filter(record__in=records)
 
