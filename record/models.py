@@ -76,6 +76,25 @@ class Record(models.Model):
     sealed_number = models.CharField(max_length=100, default="", db_index=True)
     cut_action = models.CharField(max_length=100, default="", db_index=True)
     delivery_points = models.PositiveIntegerField(default=0, db_index=True)
+    source = models.CharField(max_length=100, default="", db_index=True)
+    poste = models.CharField(max_length=100, default="", db_index=True)
+    depart = models.CharField(max_length=100, default="", db_index=True)
+    depart_nbr = models.CharField(max_length=100, default="", db_index=True)
+    depart_code = models.CharField(max_length=100, default="", db_index=True)
+    poste_type = models.CharField(max_length=100, default="", db_index=True)
+    existence = models.CharField(max_length=100, default="", db_index=True)
+    telephone = models.CharField(max_length=100, default="", db_index=True)
+    quality = models.CharField(max_length=100, default="", db_index=True)
+    lighting = models.CharField(max_length=100, default="", db_index=True)
+    poste_image_url = models.CharField(max_length=250, default="", db_index=True)
+    i1_input = models.CharField(max_length=10, default="", db_index=True)
+    i1_output = models.CharField(max_length=10, default="", db_index=True)
+    i2_input = models.CharField(max_length=10, default="", db_index=True)
+    i2_output = models.CharField(max_length=10, default="", db_index=True)
+    i3_input = models.CharField(max_length=10, default="", db_index=True)
+    i3_output = models.CharField(max_length=10, default="", db_index=True)
+    i4_input = models.CharField(max_length=10, default="", db_index=True)
+    i4_output = models.CharField(max_length=10, default="", db_index=True)
 
     action = models.ForeignKey(Action, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True)
     collector = models.ForeignKey(Collector, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True)
@@ -113,7 +132,7 @@ class Location(models.Model):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
 
     coordinates = gis_models.PointField(default=Point(0.0, 0.0), geography=True, srid=SRID)
-    record = models.OneToOneField(Record, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True, related_name="location")
+    record = models.OneToOneField(Record, on_delete=models.CASCADE, null=True, blank=True, db_index=True, related_name="location")
     
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
@@ -136,16 +155,19 @@ class DeliveryPoint(models.Model):
     status = models.CharField(max_length=100, default="", db_index=True)
     activite = models.CharField(max_length=100, default="", db_index=True)
     batiment = models.CharField(max_length=100, default="", db_index=True)
+    index = models.CharField(max_length=100, default="", db_index=True)
+    contrat = models.CharField(max_length=100, default="", db_index=True)
     code_bare = models.CharField(max_length=100, default="", db_index=True)
+    thread_nbr = models.CharField(max_length=100, default="", db_index=True)
     serial_number = models.CharField(max_length=100, default="", db_index=True)
-    image_url = models.CharField(max_length=100, default=None, null=True, blank=True, db_index=True)
-    record = models.ForeignKey(Record, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True, related_name="pl")
+    image_url = models.CharField(max_length=250, default=None, null=True, blank=True, db_index=True)
+    record = models.ForeignKey(Record, on_delete=models.CASCADE, null=True, blank=True, db_index=True, related_name="pl")
 
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     
     def __str__(self) -> str:
-        return self.serial_number
+        return self.image_url
 
     class Meta:
         ordering = ['-date_updated']
