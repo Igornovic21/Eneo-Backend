@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.contrib.gis.geos import Point
 
+from constants.ona_api import ONA_BASE_URL
 from itinary.models import Itinary
 from record.models import Record, DeliveryPoint, Action, Enterprise, Collector, Location
 from region.constants import SRID
@@ -54,7 +55,7 @@ def ona_to_models(json: dict) -> bool:
                         if "_attachments" in json.keys():
                             for attachment in json["_attachments"]:
                                 if attachment["name"] == pl["pl/info_pl/photo_index"] if "pl/info_pl/photo_index" in pl.keys() else attachment["name"]:
-                                    delivery_point.image_url = attachment["download_url"] if "download_url" in attachment.keys() else ""
+                                    delivery_point.image_url = ONA_BASE_URL + attachment["download_url"] if "download_url" in attachment.keys() else ""
                         delivery_point.record = record
                         delivery_point.save()
         return True
