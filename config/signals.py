@@ -29,7 +29,7 @@ def load_data_csv(sender, instance, **kwargs):
                 if len(row[8]) > 0:
                     poste_image_url = "{}/projects/{}/forms/{}/submissions/{}/attachments/{}".format(ODK_BASE_URL, project_id, name, row[53], row[8])
                 pl = {
-                    "pl/info_pl/status": "actif" if row[21] == "oui" else "inactif",
+                    "pl/info_pl/status": "actif" if row[21] == "oui" or row[11] == "oui" else "inactif",
                     "pl/info_pl/activite": row[29],
                     "pl/info_pl/batiment": row[24],
                     "pl/info_pl/code_bare": row[19],
@@ -74,7 +74,7 @@ def load_data_csv(sender, instance, **kwargs):
                 i4_input = row[44]
                 i4_output = row[48]
                 data = {
-                    "id": "{}-odk-position-{}".format(name, str(id)),
+                    "id": "{}-odk-position-{}-{}".format(name, instance.file.name.split(".")[0], str(id)),
                     "pl": [
                         pl
                     ],
