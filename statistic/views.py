@@ -90,7 +90,7 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
         inactive_pl = total_pl.only("status").filter(status="inactif")
         active_postpaid = total_pl.only("type").filter(type__icontains="po")
         active_prepaid = total_pl.only("type").filter(type__icontains="pr")
-        active_public_lighting = total_pl.only("type").filter(type__icontains="eclairage")
+        active_public_lighting = total_pl.only("type", "status").filter(type__icontains="eclairage", status="actif")
         not_accessible_pl = total_pl.only("type").filter(type="")
 
         logger.warning("Filtered records stats loaded")
