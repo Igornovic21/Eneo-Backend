@@ -1,4 +1,5 @@
-import pytz, json, openpyxl
+import pytz, openpyxl, requests
+from requests.auth import HTTPBasicAuth
 from datetime import datetime
 from django.utils.timezone import make_aware
 from django.http import HttpResponse
@@ -69,6 +70,15 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
                 "enterprises": self.enterprise_serializer_class(enterprises, many=True).data,
             }
         }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'], name='image_proxy', url_name='image_proxy', permission_classes=[AllowAny])
+    def image_proxy(self, request, pk=None):
+        url = request.GET.get("url", None)
+        username = 'if.geosm@gmail.com'
+        password = 'IgorOdk.237'
+
+        response = requests.get(url, auth=HTTPBasicAuth(username, password))
+        return HttpResponse(response.content, content_type='image/jpeg')
     
     @action(detail=False, methods=['get'], name='collector', url_name='collector', permission_classes=[IsAuthenticated])
     def collector(self, request):
