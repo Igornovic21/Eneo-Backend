@@ -131,7 +131,7 @@ class Record(models.Model):
 class Location(models.Model):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
 
-    coordinates = gis_models.PointField(default=Point(0.0, 0.0), geography=True, srid=SRID)
+    coordinates = gis_models.PointField(geography=False, srid=SRID)
     record = models.OneToOneField(Record, on_delete=models.CASCADE, null=True, blank=True, db_index=True, related_name="location")
     
     date_created = models.DateTimeField(auto_now_add=True)

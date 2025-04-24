@@ -35,7 +35,7 @@ def load_data_csv(sender, instance, **kwargs):
                     "pl/info_pl/code_bare": row[19],
                     "pl/info_pl/photo_index": row[33],
                     "pl/info_pl/serial_number": row[30],
-                    "pl/info_pl/type_compteur": row[22],
+                    "pl/info_pl/type_compteur": "eclairage" if row[11] == "oui" else row[22],
                     "pl/info_pl/nbr_fil": row[23],
                     "pl/info_pl/raison": row[20],
                     "pl/info_pl/contrat": row[31],
@@ -74,7 +74,7 @@ def load_data_csv(sender, instance, **kwargs):
                 i4_input = row[44]
                 i4_output = row[48]
                 data = {
-                    "id": "{}-odk-position-{}-{}".format(name, instance.file.name.split(".")[0], str(id)),
+                    "id": "odk-position-{}".format(row[49]),
                     "pl": [
                         pl
                     ],
