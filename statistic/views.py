@@ -87,15 +87,24 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
         serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
         serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
         active_pl = total_pl.only("status").filter(status="actif")
+        inactive_pl = total_pl.only("status").filter(status="inactif")
+        active_postpaid = total_pl.only("type").filter(type__icontains="po")
+        active_prepaid = total_pl.only("type").filter(type__icontains="pr")
+        active_public_lighting = total_pl.only("type").filter(type__icontains="eclairage")
+        not_accessible_pl = total_pl.only("type").filter(type="")
 
         logger.warning("Filtered records stats loaded")
         return Response({
             "status": True,
             "message": "Filtered records stats loaded",
             "detail": {
-                "active_delivery_points": active_pl.count(),
-                "delivery_points": total_pl.count(),
-                "percentage": 0 if len(records) == 0 else round(len(active_pl) / len(total_pl), 2) * 100,
+                "inactive_delivery_points": inactive_pl.count(),
+                "active_postpaid_points": active_postpaid.count(),
+                "active_prepaid_points": active_prepaid.count(),
+                "active_public_lighting_points": active_public_lighting.count(),
+                "not_accessible_pl": not_accessible_pl.count(),
+                "total": total_pl.count(),
+                "percentage": 0 if records.count() == 0 else round(active_pl.count() / (total_pl.count() - not_accessible_pl.count()), 2) * 100,
                 "statistics": {
                     "action": serializer_action_stats.data,
                     "enterprise": serializer_enterprise_stats.data,
