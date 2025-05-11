@@ -24,6 +24,8 @@ def load_data_csv(sender, instance, **kwargs):
                 index += 1
                 pl_image_url = ""
                 poste_image_url = ""
+                type = ""
+                
                 if len(row[33]) > 0:
                     pl_image_url = "{}/projects/{}/forms/{}/submissions/{}/attachments/{}".format(ODK_BASE_URL, project_id, name, row[53], row[33])
                 elif len(row[13]) > 0:
@@ -32,6 +34,14 @@ def load_data_csv(sender, instance, **kwargs):
                     pl_image_url = "{}/projects/{}/forms/{}/submissions/{}/attachments/{}".format(ODK_BASE_URL, project_id, name, row[53], row[39])
                 if len(row[8]) > 0:
                     poste_image_url = "{}/projects/{}/forms/{}/submissions/{}/attachments/{}".format(ODK_BASE_URL, project_id, name, row[53], row[8])
+
+                if row[11] == "oui":
+                    type = "eclairage"
+                elif len(row[22]) < 1:
+                    type = "sans compteur"
+                else:
+                    type = row[22]
+
                 pl = {
                     "pl/info_pl/status": "actif" if row[21] == "oui" or row[11] == "oui" else "inactif",
                     "pl/info_pl/activite": row[29],
@@ -39,7 +49,7 @@ def load_data_csv(sender, instance, **kwargs):
                     "pl/info_pl/code_bare": row[19],
                     "pl/info_pl/photo_index": row[33],
                     "pl/info_pl/serial_number": row[30],
-                    "pl/info_pl/type_compteur": "eclairage" if row[11] == "oui" or len(row[22]) < 1 else row[22],
+                    "pl/info_pl/type_compteur": type,
                     "pl/info_pl/nbr_fil": row[23],
                     "pl/info_pl/raison": row[20],
                     "pl/info_pl/contrat": row[31],
