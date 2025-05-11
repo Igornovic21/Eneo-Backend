@@ -57,25 +57,19 @@ def odk_to_models(json: dict) -> bool:
                 Location.objects.create(coordinates=point, record=record)
             if "pl" in json.keys():
                 for pl in json["pl"]:
-                    if not DeliveryPoint.objects.filter(
-                        serial_number=pl["pl/info_pl/serial_number"] if "pl/info_pl/serial_number" in pl.keys() else "",
-                        record=record
-                        ).exists():
-                        delivery_point = DeliveryPoint.objects.create(
-                            status=pl["pl/info_pl/status"] if "pl/info_pl/status" in pl.keys() else "",
-                            reason=pl["pl/info_pl/raison"] if "pl/info_pl/raison" in pl.keys() else "",
-                            activite=pl["pl/info_pl/activite"] if "pl/info_pl/activite" in pl.keys() else "",
-                            batiment=pl["pl/info_pl/batiment"] if "pl/info_pl/batiment" in pl.keys() else "",
-                            code_bare=pl["pl/info_pl/code_bare"] if "pl/info_pl/code_bare" in pl.keys() else "",
-                            type=pl["pl/info_pl/type_compteur"] if "pl/info_pl/type_compteur" in pl.keys() else "",
-                            index=pl["pl/info_pl/index"] if "pl/info_pl/index" in pl.keys() else "",
-                            contrat=pl["pl/info_pl/contrat"] if "pl/info_pl/contrat" in pl.keys() else "",
-                            thread_nbr=pl["pl/info_pl/nbr_fil"] if "pl/info_pl/nbr_fil" in pl.keys() else "",
-                            image_url=pl["pl/info_pl/image_url"] if "pl/info_pl/image_url" in pl.keys() else "",
-                            serial_number=pl["pl/info_pl/serial_number"] if "pl/info_pl/serial_number" in pl.keys() else "",
-                        )
-                        delivery_point.record = record
-                        delivery_point.save()
+                    delivery_point, _ = DeliveryPoint.objects.get_or_create(record=record)
+                    delivery_point.status = pl["pl/info_pl/status"] if "pl/info_pl/status" in pl.keys() else ""
+                    delivery_point.reason = pl["pl/info_pl/raison"] if "pl/info_pl/raison" in pl.keys() else ""
+                    delivery_point.activite = pl["pl/info_pl/activite"] if "pl/info_pl/activite" in pl.keys() else ""
+                    delivery_point.batiment = pl["pl/info_pl/batiment"] if "pl/info_pl/batiment" in pl.keys() else ""
+                    delivery_point.code_bare = pl["pl/info_pl/code_bare"] if "pl/info_pl/code_bare" in pl.keys() else ""
+                    delivery_point.type = pl["pl/info_pl/type_compteur"] if "pl/info_pl/type_compteur" in pl.keys() else ""
+                    delivery_point.index = pl["pl/info_pl/index"] if "pl/info_pl/index" in pl.keys() else ""
+                    delivery_point.contrat = pl["pl/info_pl/contrat"] if "pl/info_pl/contrat" in pl.keys() else ""
+                    delivery_point.thread_nbr = pl["pl/info_pl/nbr_fil"] if "pl/info_pl/nbr_fil" in pl.keys() else ""
+                    delivery_point.image_url = pl["pl/info_pl/image_url"] if "pl/info_pl/image_url" in pl.keys() else ""
+                    delivery_point.serial_number = pl["pl/info_pl/serial_number"] if "pl/info_pl/serial_number" in pl.keys() else ""
+                    delivery_point.save()
         return True
     except Exception as e:
         print(json["id"])

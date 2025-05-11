@@ -23,9 +23,13 @@ def load_data_csv(sender, instance, **kwargs):
                 id = index
                 index += 1
                 pl_image_url = ""
+                poste_image_url = ""
                 if len(row[33]) > 0:
                     pl_image_url = "{}/projects/{}/forms/{}/submissions/{}/attachments/{}".format(ODK_BASE_URL, project_id, name, row[53], row[33])
-                poste_image_url = ""
+                elif len(row[13]) > 0:
+                    pl_image_url = "{}/projects/{}/forms/{}/submissions/{}/attachments/{}".format(ODK_BASE_URL, project_id, name, row[53], row[13])
+                elif len(row[39]) > 0:
+                    pl_image_url = "{}/projects/{}/forms/{}/submissions/{}/attachments/{}".format(ODK_BASE_URL, project_id, name, row[53], row[39])
                 if len(row[8]) > 0:
                     poste_image_url = "{}/projects/{}/forms/{}/submissions/{}/attachments/{}".format(ODK_BASE_URL, project_id, name, row[53], row[8])
                 pl = {
@@ -35,7 +39,7 @@ def load_data_csv(sender, instance, **kwargs):
                     "pl/info_pl/code_bare": row[19],
                     "pl/info_pl/photo_index": row[33],
                     "pl/info_pl/serial_number": row[30],
-                    "pl/info_pl/type_compteur": "eclairage" if row[11] == "oui" else row[22],
+                    "pl/info_pl/type_compteur": "eclairage" if row[11] == "oui" or len(row[22]) < 1 else row[22],
                     "pl/info_pl/nbr_fil": row[23],
                     "pl/info_pl/raison": row[20],
                     "pl/info_pl/contrat": row[31],
@@ -113,8 +117,7 @@ def load_data_csv(sender, instance, **kwargs):
                 }
                 saved = odk_to_models(data)
                 if not saved:
-                    pass
                     logger.error("error when loading {} at index {}".format(instance.form_name, id))
-            except:
-                pass
+            except Exception as e:
+                print(e)
                 logger.error("error when loading {} at index {}".format(instance.form_name, id))
