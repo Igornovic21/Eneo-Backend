@@ -167,7 +167,7 @@ class DeliveryPoint(models.Model):
     date_updated = models.DateTimeField(auto_now=True)
     
     def __str__(self) -> str:
-        return self.image_url
+        return self.type + " " + self.record.ona_id
 
     class Meta:
         ordering = ['-date_updated']
