@@ -87,9 +87,9 @@ class StatFilterSet(ViewSet, PaginationHandlerMixin):
         serializer_action_stats = self.action_stat_serializer_class(action_stats, many=True)
         serializer_enterprise_stats = self.enterprise_stat_serializer_class(enterprise_stats, many=True)
         active_pl = total_pl.only("status").filter(status="actif")
-        inactive_pl = total_pl.only("status").filter(status="inactif")
-        active_postpaid = total_pl.only("type").filter(type__icontains="po")
-        active_prepaid = total_pl.only("type").filter(type__icontains="pr")
+        inactive_pl = total_pl.only("status", "type").filter(status="inactif").exclude(type="")
+        active_postpaid = total_pl.only("type", "status").filter(type__icontains="post", status="actif")
+        active_prepaid = total_pl.only("type", "status").filter(type__icontains="prep", status="actif")
         active_public_lighting = total_pl.only("type", "status").filter(type__icontains="eclairage", status="actif")
         not_accessible_pl = total_pl.only("type").filter(type="")
 
