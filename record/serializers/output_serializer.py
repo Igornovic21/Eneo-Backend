@@ -25,7 +25,7 @@ class DeliveryPointSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DeliveryPoint
-        fields = ["type", "status", "activite", "batiment", "code_bare", "serial_number", "reason", "image_url"]
+        fields = ["type", "index", "status", "activite", "batiment", "code_bare", "serial_number", "reason", "image_url"]
 
 
 class LocationSerializer(gis_serializers.GeoFeatureModelSerializer):
