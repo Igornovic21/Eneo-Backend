@@ -12,19 +12,21 @@ from authorization.authentication import ExpiringTokenAuthentication
 
 from constants.config import DATETIME_FORMAT
 from record.serializers.output_serializer import RecordSerializer
+from record.serializers.input_serializer import UpdateRecordSerialiser
 from statistic.serializers.output_serializer import ActionStatSerializer, EnterpriseStatSerializer, CollectorStatSerializer
 
 from utils.logger import logger
 from utils.pagination import PaginationHandlerMixin, BasicPagination
 
 from region.models import Region
-from record.models import Record, DeliveryPoint
+from record.models import Record
 
 
 @authentication_classes([ExpiringTokenAuthentication])
 class RecordFilterSet(ViewSet, PaginationHandlerMixin):
     pagination_class = BasicPagination
     serializer_class = RecordSerializer
+    update_record_serialiser = UpdateRecordSerialiser
     action_stat_serializer_class = ActionStatSerializer
     enterprise_stat_serializer_class = EnterpriseStatSerializer
     collector_stat_serializer_class = CollectorStatSerializer
@@ -50,6 +52,17 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
                 "message": "This region does not exist"
             }
             logger.warning("This region does not exist")
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+    def get_record_object(self, pk:str):
+        try:
+            return Record.objects.get(pk=pk)
+        except Record.DoesNotExist:
+            data = {
+                "status": False,
+                "message": "This record does not exist"
+            }
+            logger.warning("This record does not exist")
             return Response(data, status=status.HTTP_404_NOT_FOUND)
 
     def retrieve(self, request, pk=None):
@@ -100,21 +113,36 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
             "detail": serializer.data
         }, status=status.HTTP_200_OK)
     
+    def update(self, request, pk=None):
+        record = self.get_record_object(pk=pk)
+        if type(record) is Response : return record
+
+        serializer = self.update_record_serialiser(record, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": True}, status=status.HTTP_200_OK)
+        return Response({"status": False, "detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
     @action(detail=False, methods=['get'], name='pl', url_name='pl', permission_classes=[IsAuthenticated])
     def pl(self, request):
+        banoc_code = request.GET.get("banoc_code", None)
         serial_number = request.GET.get("serial_number", None)
         min_date = request.GET.get("min_date", None)
         max_date = request.GET.get("max_date", None)
 
-        if serial_number is None :
-            logger.error("Provide serial_number required params")
+        if serial_number is None and banoc_code is None :
+            logger.error("Provide serial_number or banoc_code required params")
             return Response({
                 "status": False,
-                "message": "Provide serial_number required params",
+                "message": "Provide serial_number or banoc_code required params",
             }, status=status.HTTP_400_BAD_REQUEST)
                 
-        records = Record.objects.filter(pl__serial_number=serial_number, itinary__region__in=request.user.region.all()).order_by("-date")
+        records = Record.objects.filter(itinary__region__in=request.user.region.all()).order_by("-date")
         
+        if serial_number is not None:
+            records = records.only("pl").filter(pl__serial_number=serial_number)
+        if banoc_code is not None:
+            records = records.only("banoc_code").filter(banoc_code=banoc_code)
         if min_date is not None:
             date = datetime.strptime(min_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__date__gte=date.date())

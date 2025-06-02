@@ -95,6 +95,7 @@ class Record(models.Model):
     i3_output = models.CharField(max_length=250, default="", db_index=True)
     i4_input = models.CharField(max_length=250, default="", db_index=True)
     i4_output = models.CharField(max_length=250, default="", db_index=True)
+    banoc_code = models.CharField(max_length=250, default="", db_index=True)
 
     action = models.ForeignKey(Action, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True)
     collector = models.ForeignKey(Collector, on_delete=models.DO_NOTHING, null=True, blank=True, db_index=True)
