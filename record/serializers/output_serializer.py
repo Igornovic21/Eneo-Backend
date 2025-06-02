@@ -62,7 +62,7 @@ class RecordSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Record
-        fields = ["id", "ona_id", "contrat", "amount", "accessibility", "code_anomaly", "sealed_number", "cut_action", "delivery_points", "itinary", "action", "collector", "enterprise", "date", "location", "pl", "itinary"]
+        fields = ["id", "ona_id", "banoc_code", "contrat", "amount", "accessibility", "code_anomaly", "sealed_number", "cut_action", "delivery_points", "itinary", "action", "collector", "enterprise", "date", "location", "pl", "itinary"]
 
     def get_action(self, obj):
         return obj.action.name if obj.action else None

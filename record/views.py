@@ -12,19 +12,21 @@ from authorization.authentication import ExpiringTokenAuthentication
 
 from constants.config import DATETIME_FORMAT
 from record.serializers.output_serializer import RecordSerializer
+from record.serializers.input_serializer import UpdateRecordSerialiser
 from statistic.serializers.output_serializer import ActionStatSerializer, EnterpriseStatSerializer, CollectorStatSerializer
 
 from utils.logger import logger
 from utils.pagination import PaginationHandlerMixin, BasicPagination
 
 from region.models import Region
-from record.models import Record, DeliveryPoint
+from record.models import Record
 
 
 @authentication_classes([ExpiringTokenAuthentication])
 class RecordFilterSet(ViewSet, PaginationHandlerMixin):
     pagination_class = BasicPagination
     serializer_class = RecordSerializer
+    update_record_serialiser = UpdateRecordSerialiser
     action_stat_serializer_class = ActionStatSerializer
     enterprise_stat_serializer_class = EnterpriseStatSerializer
     collector_stat_serializer_class = CollectorStatSerializer
@@ -50,6 +52,17 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
                 "message": "This region does not exist"
             }
             logger.warning("This region does not exist")
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+    def get_record_object(self, pk:str):
+        try:
+            return Record.objects.get(pk=pk)
+        except Record.DoesNotExist:
+            data = {
+                "status": False,
+                "message": "This record does not exist"
+            }
+            logger.warning("This record does not exist")
             return Response(data, status=status.HTTP_404_NOT_FOUND)
 
     def retrieve(self, request, pk=None):
@@ -99,6 +112,16 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
             "message": "Filtered records stats loaded",
             "detail": serializer.data
         }, status=status.HTTP_200_OK)
+    
+    def update(self, request, pk=None):
+        record = self.get_record_object(pk=pk)
+        if type(record) is Response : return record
+
+        serializer = self.update_record_serialiser(record, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": True}, status=status.HTTP_200_OK)
+        return Response({"status": False, "detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['get'], name='pl', url_name='pl', permission_classes=[IsAuthenticated])
     def pl(self, request):
