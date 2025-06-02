@@ -125,19 +125,24 @@ class RecordFilterSet(ViewSet, PaginationHandlerMixin):
     
     @action(detail=False, methods=['get'], name='pl', url_name='pl', permission_classes=[IsAuthenticated])
     def pl(self, request):
+        banoc_code = request.GET.get("banoc_code", None)
         serial_number = request.GET.get("serial_number", None)
         min_date = request.GET.get("min_date", None)
         max_date = request.GET.get("max_date", None)
 
-        if serial_number is None :
-            logger.error("Provide serial_number required params")
+        if serial_number is None and banoc_code is None :
+            logger.error("Provide serial_number or banoc_code required params")
             return Response({
                 "status": False,
-                "message": "Provide serial_number required params",
+                "message": "Provide serial_number or banoc_code required params",
             }, status=status.HTTP_400_BAD_REQUEST)
                 
-        records = Record.objects.filter(pl__serial_number=serial_number, itinary__region__in=request.user.region.all()).order_by("-date")
+        records = Record.objects.filter(itinary__region__in=request.user.region.all()).order_by("-date")
         
+        if serial_number is not None:
+            records = records.only("pl").filter(pl__serial_number=serial_number)
+        if banoc_code is not None:
+            records = records.only("banoc_code").filter(banoc_code=banoc_code)
         if min_date is not None:
             date = datetime.strptime(min_date, DATETIME_FORMAT)
             records = records.only("date").filter(date__date__gte=date.date())
