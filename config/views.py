@@ -160,6 +160,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             'Batiment_PL',
             'Status_PL',
             'Images_PL',
+            'Activite_PL'
             'Lattitude',
             'Longitude',
             'Contrat',
@@ -179,15 +180,17 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             reasons = []
             batiments = []
             status = []
+            activities = []
             delivery_points = DeliveryPoint.objects.only("record").filter(record=record)
             for delivery_point in delivery_points:
-                images.append('https://api.ona.io' + delivery_point.image_url if delivery_point.image_url != "" else "")
+                images.append(delivery_point.image_url if delivery_point.image_url != "" else "")
                 types.append(delivery_point.type)
                 no_series.append(delivery_point.serial_number)
                 bar_codes.append(delivery_point.code_bare)
                 reasons.append(delivery_point.reason)
                 batiments.append(delivery_point.batiment)
                 status.append(delivery_point.status)
+                activities.append(delivery_point.activite)
             sheet.append([
                 record.ona_id,
                 record.collector.matricule,
@@ -202,6 +205,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
                 ";".join(batiments),
                 ";".join(status),
                 ";".join(images),
+                ";".join(activities),
                 record.location.coordinates.x,
                 record.location.coordinates.y,
                 record.contrat,
