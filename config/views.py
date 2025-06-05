@@ -160,7 +160,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             'Batiment_PL',
             'Status_PL',
             'Images_PL',
-            'Activite_PL'
+            'Activite_PL',
             'Lattitude',
             'Longitude',
             'Contrat',
