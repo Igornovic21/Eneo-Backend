@@ -34,7 +34,7 @@ def load_data_csv(sender, instance, **kwargs):
                     poste_image_url = "{}/projects/{}/forms/{}/submissions/{}/attachments/{}".format(ODK_BASE_URL, project_id, name, row[53], row[8])
                 pl = {
                     "pl/info_pl/status": "actif" if row[21] == "oui" or row[11] == "oui" else "inactif",
-                    "pl/info_pl/activite": row[29],
+                    "pl/info_pl/activite": row[28],
                     "pl/info_pl/batiment": row[24],
                     "pl/info_pl/code_bare": row[19],
                     "pl/info_pl/photo_index": row[33],
