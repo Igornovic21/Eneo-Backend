@@ -133,10 +133,10 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             records = records.only("itinary").filter(itinary__block_code=itinary)
         if min_date is not None:
             date = datetime.strptime(min_date, DATETIME_FORMAT)
-            records = records.only("date").filter(date__gte=make_aware(date, timezone=pytz.UTC))
+            records = records.only("date").filter(date__date__gte=make_aware(date, timezone=pytz.UTC))
         if max_date is not None:
             date = datetime.strptime(max_date, DATETIME_FORMAT)
-            records = records.only("date").filter(date__lte=make_aware(date, timezone=pytz.UTC))
+            records = records.only("date").filter(date__date__lte=make_aware(date, timezone=pytz.UTC))
 
         workbook = openpyxl.Workbook()
         sheet = workbook.active
