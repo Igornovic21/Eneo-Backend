@@ -169,6 +169,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
             'Anomalie',
             'No_scelle',
             'Action_coupure',
+            'Banoc_code',
             'Date'
         ]
         sheet.append(headers)
@@ -214,6 +215,7 @@ class ConfigViewSet(ViewSet, PaginationHandlerMixin):
                 record.code_anomaly,
                 record.sealed_number,
                 record.cut_action,
+                record.banoc_code,
                 record.date.strftime("%d/%m/%Y, %H:%M:%S")
             ])
         
