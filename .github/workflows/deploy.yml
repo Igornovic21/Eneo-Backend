@@ -41,7 +41,6 @@ jobs:
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION_KEY }}
             -Dsonar.python.version=3.12
             -Dsonar.sources=.
-            -Dsonar.tests=./tests
 
       - name: Check SonarQube Quality Gate Status
         id: sonarqube_quality_gate
