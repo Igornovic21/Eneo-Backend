@@ -1,0 +1,97 @@
+name: Django CI/CD with Docker
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for SonarQube
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install flake8
+
+      - name: Lint with Flake8
+        run: flake8 . --count --exit-zero --exclude=docs,.git,__pycache__,venv,build,dist
+
+      - name: SonarQube Analysis
+        uses: sonarsource/sonarqube-scan-action@master
+        id: sonarqube_analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_ACCOUNT_KEY }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION_KEY }}
+            -Dsonar.python.version=3.12
+            -Dsonar.sources=.
+            -Dsonar.tests=./tests
+
+      - name: Check SonarQube Quality Gate Status
+        id: sonarqube_quality_gate
+        run: |
+          # This step is crucial for getting the status of the quality gate.
+          # SonarQube's action doesn't fail the workflow by default.
+          # We check the status and store it in a variable.
+          QUALITY_GATE_STATUS=$(curl -s -u "${{ secrets.SONAR_ACCOUNT_KEY }}:" \
+            "${{ steps.sonarqube_analysis.outputs.sonar_project_url }}/api/qualitygates/project_status?projectKey=${{ secrets.SONAR_PROJECT_KEY }}" | jq -r .projectStatus.status)
+          echo "Quality Gate Status: $QUALITY_GATE_STATUS"
+          echo "::set-output name=status::$QUALITY_GATE_STATUS"
+        shell: bash
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build_and_test
+    if: success() || failure() # Run deployment regardless of previous job status
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+        shell: bash
+
+      - name: Docker Login
+        run: |
+          # If you have a private registry, add your login command here
+          echo "Logging into Docker Hub or a private registry..."
+
+      - name: Deploy to VPS via SSH
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            # Navigate to the project directory on the remote server
+            cd ${{ secrets.REMOTE_SERVER_PATH }}
+
+            # Pull the latest changes from the repository
+            git pull origin main
+
+            # Stop the existing containers
+            docker compose down
+
+            # Build and start the new containers in detached mode
+            docker compose up --build -d
+
+            # Clean up old Docker images to save space (optional)
+            # docker image prune -f
+          EOF
+        shell: bash
