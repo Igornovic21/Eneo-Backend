@@ -69,7 +69,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build_and_test
-    if: ${{ needs.build_and_test.outputs.quality_gate.status == 'OK' || github.event_name == 'push' }} # déploie même si Quality Gate échoue
+    if: ${{ needs.build_and_test.outputs.quality_gate.status == 'OK' || github.event_name == 'push' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -78,22 +78,22 @@ jobs:
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          
+
       - name: Add remote host to known_hosts
         run: |
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
           ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
-
-
-      - name: Docker Login
-        run: echo "No login required (public Docker Hub used)"
+      - name: Verify SSH connection
+        run: ssh -T -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} echo "SSH connection successful"
 
       - name: Deploy to VPS via SSH
         run: |
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
             cd ${{ secrets.REMOTE_SERVER_PATH }}
             git pull origin main
             docker compose down
             docker compose up --build -d
-          EOF
+          "
